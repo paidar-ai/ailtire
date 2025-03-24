@@ -16,7 +16,7 @@
     "author": "Darren W Pulsipher - darren@pulsipher.org",
     "license": "ISC",
     "dependencies": {
-        "axios": "latest",
+        "axios": "1.8.3",
         "body-parser": "^1.20.0",
         "commander": "^13.1.0",
         "ejs": "^3.1.8",
