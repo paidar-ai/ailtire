@@ -116,7 +116,7 @@ module.exports = {
         return _workflowInstances;
     },
     show: (workflow) => {
-        return _workflowInstances[workflow.name];
+        return _workflowInstances[workflow.id];
     },
     create: (workflow) => {
         const AEvent = require("./AEvent");

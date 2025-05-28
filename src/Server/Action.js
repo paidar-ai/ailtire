@@ -17,6 +17,13 @@ module.exports = {
         let nroute = route.replaceAll(/\s/g, '').toLowerCase();
         global.actions[nroute] = action;
         global._server.all(nroute, async (req, res) => {
+            if (req.method === 'OPTIONS') {
+                // Handle the CORS preflight request
+                res.header('Access-Control-Allow-Origin', '*');
+                res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+                res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                return res.status(200).end(); // Respond with a 200 and end the response
+            }
             await execute(action, req.query, {req: req, res: res});
         });
     },
@@ -62,6 +69,13 @@ module.exports = {
                         });
                     } else {
                         server.all(route, async (req, res) => {
+                            if (req.method === 'OPTIONS') {
+                                // Handle the CORS preflight request
+                                res.header('Access-Control-Allow-Origin', '*');
+                                res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+                                res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                                return res.status(200).end(); // Respond with a 200 and end the response
+                            }
                             await execute(action, req.query, {req: req, res: res});
                         });
                     }
@@ -265,6 +279,13 @@ const mapToServer = (server, config) => {
                 await execute(gaction, req.query, {req: req, res: res});
             });
             server.all('*' + normalizedName, async (req, res) => {
+                if (req.method === 'OPTIONS') {
+                    // Handle the CORS preflight request
+                    res.header('Access-Control-Allow-Origin', '*');
+                    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+                    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                    return res.status(200).end(); // Respond with a 200 and end the response
+                }
                 req.url = req.url.replace(config.urlPrefix, '');
                 await execute(gaction, req.query, {req: req, res: res});
             });
@@ -286,6 +307,13 @@ const mapToServer = (server, config) => {
                 await execute(gaction, req.query, {req: req, res: res});
             });
             server.all('*' + normalizedName, async (req, res) => {
+                if (req.method === 'OPTIONS') {
+                    // Handle the CORS preflight request
+                    res.header('Access-Control-Allow-Origin', '*');
+                    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+                    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                    return res.status(200).end(); // Respond with a 200 and end the response
+                }
                 req.url = req.url.replace(config.urlPrefix, '');
                 await execute(gaction, req.query, {req: req, res: res});
             });

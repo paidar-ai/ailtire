@@ -76,7 +76,7 @@ export class Graph3D {
                     if (!retval) {
                         retval = document.querySelector(defaultID);
                     }
-                    let obj3D = retval.object3D.clone();
+                    let obj3D = node;
                     return obj3D;
                 }
             })

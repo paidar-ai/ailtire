@@ -1,0 +1,61 @@
+.ailtire-genai:before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-image: url("ailtirebutton.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+
+.stateSatisfied {
+    background-color: lightblue;
+    color: black;
+}
+
+.stateEvaluated {
+    background-color: lightyellow;
+    color: black;
+}
+.stateFailed {
+    background-color: pink;
+    color: black;
+}
+.stateInit {
+    background-color: lightgray;
+    color: black;
+}
+.stateConfirmed {
+    background-color: lightgreen;
+    color:black;
+}
+.stateRejected {
+    background-color: pink;
+    color:black;
+}
+.stateEnabled {
+    background-color: lightgreen;
+    color:black;
+}
+.stateDisabled {
+    background-color: pink;
+    color:black;
+}
+.stateinprogress {
+    background-color: #40c0f7;
+    color: black;
+}
+.statefailed {
+    background-color: #ff2222;
+    color: black;
+}
+.stateerror {
+    background-color: #cc8844;
+    color: black;
+}
+.statecompleted {
+    background-color: #a0ffaf;
+    color: black;
+}

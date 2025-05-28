@@ -9,7 +9,8 @@
         "build-bump": "node build.js bump patch",
         "publish": "node publish.js",
         "docs": "java -jar docs/plantuml.jar docs/*.puml docs/**/*.puml",
-        "startTest": "node test.js"
+        "startTest": "node test.js",
+        "test": "jest test"
     },
     "keywords": [],
     "bin": "bin/ailtire",
@@ -30,6 +31,7 @@
         "yamljs": "^0.3.0"
     },
     "devDependencies": {
+        "jest": "^29.7.0",
         "mocha": "^11.0.1"
     }
 }

@@ -1,0 +1,155 @@
+.ailtire-scenario:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("scenario.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-workflow:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("workflow.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+
+.ailtire-usecase:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("usecase.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-actor:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("actor.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-class:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("class.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-package:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("folder.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-collapsed:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("arrow-left.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-expanded:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("arrow-right.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-location:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("location.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-network:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("network.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-storage:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("storage.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-compute:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("compute.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-environment:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("environment.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}
+.ailtire-stack:before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("stack.svg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    border-width: 0;
+}

@@ -48,7 +48,7 @@ class AWorkflowInstance {
 // First activity is Init.
             if (!opts.workflow.activities.hasOwnProperty("Init")) {
                 AEvent.emit("workflow.failed", {obj: opts.workflow, error: "Init Activity does not exist!"});
-                this.state = 'Failed';
+                this.state = 'failed';
                 return this;
             }
             if (!_workflowInstances.hasOwnProperty(opts.workflow.name)) {

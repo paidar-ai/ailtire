@@ -13,8 +13,9 @@ end box
 <% for (let pname in pkgs) {
 let pkgtop = pkgs[pname];
 let pkg1 = pkgtop.pkg;
+let color = pkg1.color || "white";
 %>
-box <%= pkg1.name %> #<%= pkg1.color.replace(/\#/g,'') %>
+box <%= pkg1.name %> #<%= color.replace(/\#/g,'') %>
     <% for (let model in pkgtop.models) { -%>
         participant <%= model %>
     <% } -%>

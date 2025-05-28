@@ -802,7 +802,7 @@ function _createPackageEditModels(record, setURL) {
                 let count = 0;
                 for (let name in w2ui.PackageEditModels.record.classes) {
                     let usecase = w2ui.PackageEditModels.record.classes[name];
-                    records.push({
+                   records.push({
                         recid: count++,
                         name: usecase.name,
                         description: usecase.description,
