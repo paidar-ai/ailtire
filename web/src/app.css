@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+@import './styles/tree.css';
+@import './styles/ailtire.css';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+@plugin "daisyui";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
