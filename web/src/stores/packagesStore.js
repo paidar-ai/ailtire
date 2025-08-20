@@ -13,22 +13,22 @@ export const packageNodes = derived(packages, ($packages) => {
         mapSubPackage(null, $packages.subpackages[pname]);
     }
 
-    function mapSubPackage(parent, pkg) {
-        idMap[pkg.name] = {
-            ...pkg,
-            id: pkg.name,
+    function mapSubPackage(parent, package) {
+        idMap[package.name] = {
+            ...package,
+            id: package.name,
             type: "Package",
             _children: [],
             _view: Package,
-            expandLink: `${API_BASE_URL}/package/get?id=${pkg.name}`
+            expandLink: `${API_BASE_URL}/package/get?id=${package.name}`
         };
         if (parent) {
-            idMap[pkg.name].parent = parent;
-            idMap[parent]._children.push(idMap[pkg.name]);
+            idMap[package.name].parent = parent;
+            idMap[parent]._children.push(idMap[package.name]);
         }
-        for (let cname in pkg.classes) {
+        for (let cname in package.classes) {
             idMap[cname] = {
-                ...pkg.classes[cname],
+                ...package.classes[cname],
                 id: cname,
                 name: cname,
                 type: "Class",
@@ -36,11 +36,11 @@ export const packageNodes = derived(packages, ($packages) => {
                 expandLink: `${API_BASE_URL}/model/get?id=${cname}`,
                 _view: Model
             };
-            idMap[cname].parent = pkg.name;
-            idMap[pkg.name]._children.push(idMap[cname]);
+            idMap[cname].parent = package.name;
+            idMap[package.name]._children.push(idMap[cname]);
         }
-        for (let pname in pkg.subpackages) {
-            mapSubPackage(pkg.name, pkg.subpackages[pname]);
+        for (let pname in package.subpackages) {
+            mapSubPackage(package.name, package.subpackages[pname]);
         }
     }
 

@@ -17,7 +17,7 @@ module.exports = {
     fn: function (inputs, env) {
         try {
             let workflow = AWorkflow.get(inputs.id);
-            let package = APackage.getPackage(workflow.pkg);
+            let package = APackage.getPackage(workflow.package);
             for(let fname in inputs) {
                 workflow[fname] = inputs[fname];
             }

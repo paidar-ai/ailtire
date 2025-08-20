@@ -23,13 +23,13 @@ module.exports = {
                 actorObject[cname] = actor[cname]
             }
             _save(actorObject);
-            AEvent.emit('actor.updated', actor);
+            AEvent.emit({event:'actor.updated', data: actor });
         } else {
             if (!actor.dir) {
                 actor.dir = `./actors/${actor.name.replace(/\s/g, '')}`;
             }
             _save(actor);
-            AEvent.emit('actor.created', actor);
+            AEvent.emit({event:'actor.created', data: actor });
         }
         // Now load this in the global memory space.
         _load(actor.dir);

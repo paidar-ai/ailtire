@@ -25,20 +25,20 @@ module.exports = {
         // inputs contains the obj for the this method.
         let modelName = env.req.url.split(/\//)[1];
         if(inputs.mode === 'json') {
-            let cls = AClass.getClass(modelName);
+            let cls = AClass.getClass({name:modelName});
             let newObj = new cls(env.req.body);
             let jobj = newObj.toJSON;
-            AEvent.emit(modelName + '.create', { obj: jobj });
+            AEvent.emit({event:modelName + '.create', data: { obj: jobj } });
             if(env.res) {
                 env.res.json({results: jobj._attributes});
             }
         }
         else {
             // Remove the cls  from the inputs so they are not passed down to the constructor
-            let myClass = AClass.getClass(modelName);
+            let myClass = AClass.getClass({name:modelName});
             if(myClass) {
                 let newObj = new myClass(inputs);
-                AEvent.emit(modelName + '.create', {obj: newObj.toJSON});
+                AEvent.emit({event:modelName + '.create', data: {obj: newObj.toJSON} });
                 if (env?.res) {
                     env.res.redirect(`/${modelName}?id=${newObj.id}`)
                 }

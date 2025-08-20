@@ -12,8 +12,8 @@ const getStates = (name) => {
     let names = name.split(/\//);
     let inter = names.pop();
     let comp = names.pop();
-    let pkg = names.join('-');
-    let sname = `${pkg.replace(/\-/g,'') }${comp}${inter}`;
+    let package = names.join('-');
+    let sname = `${package.replace(/\-/g,'') }${comp}${inter}`;
     sname = sname.replace(/\s/g,'');
     let states = ``;
     let pkgname = '';

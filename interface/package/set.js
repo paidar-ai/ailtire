@@ -34,31 +34,31 @@ module.exports = {
     fn: function (inputs, env) {
         // Find the actor from the usecase.
         console.log("INPUTS:", inputs);
-        let pkg = APackage.getPackage(inputs.id);
-        if(pkg) {
-            pkg.description = inputs.summary;
-            if(pkg.doc && pkg.doc.basedir) {
-                fs.writeFileSync(pkg.doc.basedir + '/doc.emd', inputs.documentation)
+        let package = APackage.getPackage(inputs.id);
+        if(package) {
+            package.description = inputs.summary;
+            if(package.doc && package.doc.basedir) {
+                fs.writeFileSync(package.doc.basedir + '/doc.emd', inputs.documentation)
             }
             let depends = [];
-            for(let i in pkg.depends) {
-               depends.push(pkg.depends[i].name);
+            for(let i in package.depends) {
+               depends.push(package.depends[i].name);
             }
-            let savePkg = {
-                shortname: pkg.shortname,
-                name: pkg.name,
-                description: pkg.description,
-                color: pkg.color,
+            let savepackage = {
+                shortname: package.shortname,
+                name: package.name,
+                description: package.description,
+                color: package.color,
                 depends: depends,
             }
-            let pkgDef = `module.exports = ${JSON.stringify(savePkg, null, 3)} ;`;
-            let filename = pkg.dir + '/index.js';
+            let pkgDef = `module.exports = ${JSON.stringify(savepackage, null, 3)} ;`;
+            let filename = package.dir + '/index.js';
             fs.writeFileSync(filename, pkgDef);
 
             if(env.res) {
                 env.res.end('updated');
             }
-            return pkg;
+            return package;
         } else {
             console.error("Could not find the UseCaser:", ucname);
             env.res.status(500).send({error: "UseCase could not be found"});

@@ -1,5 +1,23 @@
 class AIHelper {
     static async ask(messages){
+        if(!global.ai) {
+            let aiAdaptor = global.ailtire.ai.adaptor;
+            if(aiAdaptor) {
+                try {
+                    if(ailtire.ai) {
+                        global.ai = new aiAdaptor(ailtire.ai);
+                        // this might need an await.
+                        global.ai.init();
+                    } else {
+                        return "";
+                    }
+                }
+                catch(e) {
+                    console.error("Error initializing AI:", e.message);
+                    return "";
+                }
+            }
+        }
         return _ask(messages);
     }
     static async askForCode(messages) {

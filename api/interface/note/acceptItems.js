@@ -1,0 +1,34 @@
+module.exports = {
+    friendlyName: 'acceptItems',
+    description: 'Accept Item for generation of artifacts in the architecture.',
+    inputs: {
+        note: {
+            description: 'The id of the note',
+            type: 'string'
+        },
+        items: {
+            description: "The ids of the items to accept for generation of artifacts.",
+            type: 'string'
+        }
+    },
+    exits: {
+        json: (obj) => {
+            return obj;
+        }
+    },
+
+    fn: async function (inputs, env) {
+        
+        let note =  ANote.find({id:inputs.note});
+        if(note) {
+            let items = inputs.items.split(',');
+            for(let i in items) {
+                let itemObj = AItem.find({id:items[i]});
+                await itemObj.accept();
+            }
+            return {message: 'Completed'};
+        } else {
+            return {message: "Note not Found"};
+        }
+    }
+};

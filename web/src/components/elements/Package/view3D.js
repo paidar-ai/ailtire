@@ -236,16 +236,16 @@ function _calculateGroupBox(items, fn) {
     return asize;
 }
 
-function _calculateDeepBox(pkg) {
-    let ibox = _calculateGroupBox(pkg.interface, _calculateBox); // XZ
-    let hbox = _calculateGroupBox(pkg.handlers, _calculateBox); // YZ
-    let ubox = _calculateGroupBox(pkg.usecases, _calculateBox); // XY
-    let cbox = _calculateGroupBox(pkg.classes, _calculateBox); // XY
-    let pbox = _calculateGroupBox(pkg.subpackages, _calculateBox); // XZ
-    let dbox = _calculateGroupBox(pkg.depends, _calculateBox); // YZ
+function _calculateDeepBox(package) {
+    let ibox = _calculateGroupBox(package.interface, _calculateBox); // XZ
+    let hbox = _calculateGroupBox(package.handlers, _calculateBox); // YZ
+    let ubox = _calculateGroupBox(package.usecases, _calculateBox); // XY
+    let cbox = _calculateGroupBox(package.classes, _calculateBox); // XY
+    let pbox = _calculateGroupBox(package.subpackages, _calculateBox); // XZ
+    let dbox = _calculateGroupBox(package.depends, _calculateBox); // YZ
 
     /* X is always the width, Y is height with X, Y is width with Z, Z is always h */
-    let fontWidth = pkg.name.length * defaults.fontSize / 2;
+    let fontWidth = package.name.length * defaults.fontSize / 2;
     const wnum = Math.max(ibox.box.w, ubox.box.w, cbox.box.w, 100, fontWidth);
     const hnum = Math.max(hbox.box.w, ubox.box.h, cbox.box.h, dbox.box.h, pbox.box.h, 100);
     const dnum = Math.max(ibox.box.h, hbox.box.h, pbox.box.w, dbox.box.w, 100);

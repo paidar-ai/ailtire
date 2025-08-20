@@ -22,12 +22,22 @@ module.exports = {
         // If it does have one return with await.
         if(method.fn.constructor.name === "AsyncFunction") {
             return (async () => {
-                let retval = await method.fn(obj, args);
-                return await _processReturnAsync(method, retval, args);
+                if(method.static) {
+                    let retval = await method.fn(args);
+                    return await _processReturnAsync(method, retval, args);
+                } else {
+                    let retval = await method.fn(obj, args);
+                    return await _processReturnAsync(method, retval, args);
+                }
             })();
         } else {
-            let retval = method.fn(obj, args);
-            return _processReturn(method, retval, args);
+            if(method.static) {
+                let retval = method.fn(args);
+                return _processReturn(method, retval, args);
+            } else {
+                let retval = method.fn(obj, args);
+                return _processReturn(method, retval, args);
+            }
         }
     }
 };

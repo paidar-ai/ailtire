@@ -1,4 +1,3 @@
-const AActor = require('../../src/Server/AActor');
 const fs = require("fs");
 const path = require("path");
 

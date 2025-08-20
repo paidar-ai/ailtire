@@ -10,7 +10,7 @@ module.exports = {
             type: 'string',
             required: true
         },
-        path: {
+        dir: {
             description: 'The path to install the application',
             type: 'string',
             required: false

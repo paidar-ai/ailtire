@@ -3,14 +3,18 @@ const YAML = require('yamljs');
 const path = require('path');
 const Action = require('../Server/Action');
 const fs = require('fs');
+const {command} = require("mocha/lib/cli/run");
 
 let baseDir = __dirname;
+let _commands = {};
+
 module.exports = {
     execute: (binDir) => {
         let args = process.argv.slice(2);
         let fullPath = process.argv[1];
         let program = path.basename(fullPath);
         baseDir = binDir;
+        _normalizeInterface();
         _executeCommand(program, args);
     }
 }
@@ -56,14 +60,8 @@ const _helpGetCommands = (program, topDir) => {
 }
 const _helpTopLevel = (program) => {
     let helpString = `Usage: ${program} [cmd]\n`;
-    helpString += _helpGetCommands(program, path.resolve(baseDir + '/../api/interface'));
-    helpString += _helpGetCommands(program, path.resolve(baseDir + '/.'));
-    helpString += '\n';
-    helpString += 'ailtire Extensions:\n';
-    if (program !== "ailtire") {
-        helpString += _helpGetCommands(program, path.resolve(baseDir + '/../node_modules/ailtire/interface'));
-    } else {
-        helpString += _helpGetCommands(program, path.resolve(baseDir + '/../interface'));
+    for(let i in _commands) {
+        helpString += `\t${i} [cmd] <args>\n`;
     }
     helpString += '\n';
     console.log(helpString);
@@ -87,35 +85,6 @@ const _runCommand = (program, commands, args) => {
         _executeAction(action, args);
         return;
     }
-    // Then look in the api directory for the application.
-    let topDir = path.resolve(baseDir + '/../api');
-    action = _findAction(commands, args, path.resolve(topDir, 'interface'));
-    if (action) {
-        _postAction(action, args);
-        return;
-    } else {
-        action = _searchAction(commands, args, path.resolve(`${topDir}`));
-        if (action) {
-            _postAction(action, args);
-            return;
-        }
-    }
-    // Now check the ailtire directory to see if there is something there.
-    if (program !== "ailtire") {
-        let ailtireDir = path.resolve(`${baseDir}/../node_modules/ailtire`);
-        action = _findAction(commands, args, path.resolve(ailtireDir, "interface"));
-        if (action) {
-            _executeAction(action, args);
-            return;
-        }
-    } else {
-        action = _findAction(commands, args, path.resolve(baseDir, "../interface"));
-        if (action) {
-            _executeAction(action, args);
-            return;
-        }
-    }
-    // Nothing hit so give the top level help.
     _helpTopLevel(program);
     return null;
 };
@@ -127,8 +96,8 @@ const _searchAction = (commands, args, topDir) => {
         for (let i in myDirs) {
             let dirname = path.resolve(`${topDir}/${myDirs[i]}`);
             if (fs.existsSync(path.resolve(`${dirname}/index.js`))) {
-                let pkg = require(path.resolve(`${dirname}/index.js`));
-                let name = pkg.shortname;
+                let package = require(path.resolve(`${dirname}/index.js`));
+                let name = package.shortname;
                 if (commands[0] === name) {
                     let newCommand = commands.slice(1);
                     if (newCommand.length === 0) {
@@ -151,9 +120,16 @@ const _searchAction = (commands, args, topDir) => {
 };
 
 const _helpCommand = (actionObj) => {
-    let errorString = `Usage: ${actionObj.fullName}\n`;
+    let fullName = actionObj.path.replaceAll(/\//g, ' ');
+    let errorString = `Usage: ${fullName}\n`;
+    errorString += `\t${actionObj.description}\n`;
     for (let iname in actionObj.inputs) {
-        errorString += ` --${iname} <${actionObj.inputs[iname].type}>\n\t\t${actionObj.inputs[iname].description}\n`;
+        if( actionObj.inputs[iname].required ) {
+            errorString += ` --${iname} <${actionObj.inputs[iname].type}> (required) -  ${actionObj.inputs[iname].description}\n`;
+        } else {
+
+            errorString += `[--${iname} ${actionObj.inputs[iname].type}] (optional) - ${actionObj.inputs[iname].description}\n`;
+        }
     }
     console.error(errorString);
     process.exit(0);
@@ -212,7 +188,8 @@ const _executeAction = (actionObj, args) => {
         }
     }
     if (failed) {
-        let errorString = `Usage: ${actionObj.fullName.replace(/\//g, ' ')}\n`;
+        let fullName = actionObj.path.replaceAll(/\//g, ' ');
+        let errorString = `Usage: ${fullName}\n`;
         for (let iname in actionObj.inputs) {
             errorString += ` --${iname} <${actionObj.inputs[iname].type}>\n\t\t${actionObj.inputs[iname].description}\n`;
         }
@@ -301,49 +278,64 @@ const _helpVersion = () => {
     process.exit(0);
 }
 const _findAction = (commands, args, topDir) => {
-    let bin = "";
-    let i = 0;
-    let testString = topDir;
-    let dirOnly = false;
-    while (i < commands.length) {
-        testString += "/" + commands[i];
-        testString = path.resolve(testString);
-        i++;
-        if (_existsDir(testString)) {
-            bin = testString;
-            dirOnly = true;
-        } else if (fs.existsSync(testString)) {
-            bin = testString;
-            dirOnly = false;
-        } else if (fs.existsSync(testString + '.js')) {
-            bin = testString + '.js';
-            dirOnly = false;
-        } else if (fs.existsSync(testString + '.ts')) {
-            bin = testString + '.ts';
-            dirOnly = false;
-        } else if (fs.existsSync(testString + '/index.js')) {
-            bin = path.resolve(testString + '/index.js');
-            dirOnly = false;
+
+    let retval = null;
+    let current = _commands;
+    let found = false;
+    for(let i in commands) {
+        let command = commands[i];
+        if(current.hasOwnProperty(command)) {
+            current = current[command]
+            found = true;
+        } else {
+            found = false;
+            break;
         }
     }
-    if (dirOnly) {
-        let myCommand = commands.shift();
-        console.log(`Could not find the command: ${commands.join(" ")}\n`);
-        _helpCommandGroup(myCommand, bin);
-    } else if (bin.length > 0) {
-        const actionObj = require(bin);
-        actionObj.fullName = commands.join(' ');
-        return actionObj;
+    if(!found) { return null; }
+    if(current.inputs) {
+        return current;
     }
+    // This is a group of acctions.
+    _helpCommandGroup(commands, current);
     return null;
 };
-const _helpCommandGroup = (program, topDir) => {
-    if (!fs.existsSync(topDir)) {
-        console.error("Could not find the command!");
-        return;
+const _helpCommandGroup = (commands, group) => {
+    let helpString = `Usage: ${commands.join(' ')} [cmd]\n`;
+    for(let i in group) {
+        let action = group[i];
+        let params = '';
+        if(action.inputs) {
+            for(let iname in action.inputs) {
+                if(action.inputs[iname].required) {
+                    params += `--${iname}=<${action.inputs[iname].type}> `
+                } else {
+                    params += `[--${iname}=${action.inputs[iname].type}] `
+                }
+            }
+        }
+        helpString += `\t${action.name.replace(/\//g, ' ')} ${i} ${params}\n`;
+        helpString += `\t\t${action.description}\n`;
     }
-    let helpString = `Usage: ${program} [cmd]\n`;
-    helpString += _helpGetCommands(program, topDir);
     console.log(helpString);
     process.exit(0);
+}
+const _normalizeInterface = () => {
+    
+    let interfaces = global.interface;
+    for(let i in interfaces) {
+        let interface = interfaces[i];
+        let paths = interface.path.split('/');
+        current = _commands;
+        for (let i = 2; i < paths.length; i++) {
+            let path = paths[i];
+            if (!current.hasOwnProperty(path)) {
+                current[path] = {};
+            }
+            if (i === paths.length - 1) {
+                current[path] = interface;
+            }
+            current = current[path];
+        }
+    }
 }

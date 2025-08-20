@@ -1,0 +1,29 @@
+// const generator = require('../../src/Documentation/puml');
+
+module.exports = {
+    friendlyName: 'uml',
+    description: 'plantuml diagram of the Actor',
+    inputs: {
+        id: {
+            description: 'The name of the package',
+            type: 'string',
+            required: true
+        },
+    },
+
+    fn: async function (inputs, env) {
+        try {
+            // Generate the plantuml diagram
+            // Or get it from the doc directory.
+            
+            let actor = AActor.get({id:inputs.id});
+            let results = "";  // await actor.actor(actor, inputs.diagram);
+            
+            env.res.json(results);
+        }
+        catch(e) {
+            console.error(e);
+            env.res.json({error:`Package not found ${inputs.id}`});
+        }
+    }
+};

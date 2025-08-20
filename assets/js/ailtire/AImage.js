@@ -161,7 +161,7 @@ export default class AImage {
         w2ui['objlist'].columns = cols;
         let i = 0;
         records.push({recid: i++, name: 'Name', value: result.name, detail: result.name});
-        records.push({recid: i++, name: 'Package', value: result.pkg, detail: result.pkg});
+        records.push({recid: i++, name: 'Package', value: result.package, detail: result.package});
         if(result.image && result.image.cmd) {
             records.push({recid: i++, name: 'Command', value: result.image.cmd, detail: result.image.cmd});
         }

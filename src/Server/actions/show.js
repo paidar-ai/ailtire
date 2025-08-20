@@ -11,7 +11,7 @@ module.exports = {
     fn: function (inputs, env) {
         // inputs contains the obj for the this method.
         let modelName = env.req.url.split(/[\/\?]/)[1];
-        let cls = AClass.getClass(modelName);
+        let cls = AClass.getClass({name:modelName});
         if(!cls) {
             console.error("Could not find the class:", modelName);
             if(env.res) {
@@ -32,7 +32,7 @@ module.exports = {
         }
         for (let aname in cls.definition.associations) {
             let assoc = cls.definition.associations[aname];
-            let acls = AClass.getClass(assoc.type);
+            let acls = AClass.getClass({name:assoc.type});
             cols[aname] = {
                 name: aname,
                 description: assoc.description,

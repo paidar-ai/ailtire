@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-
+const z = require('zod');
 const Renderer = require('../Documentation/Renderer');
+const {StreamableHTTPServerTransport} = require("@modelcontextprotocol/sdk/server/streamableHttp.js");
 
 const isDirectory = source => fs.lstatSync(source).isDirectory();
 const isFile = source => !fs.lstatSync(source).isDirectory();
@@ -27,24 +28,24 @@ module.exports = {
             await execute(action, req.query, {req: req, res: res});
         });
     },
-    load: (server, prefix, mDir, config) => {
+    load: (server, prefix, config) => {
         if (server && !global._server) {
             global._server = server;
         }
-        loadActions(prefix, mDir);
+        // loadActions(prefix, mDir);
         mapToServices();
         if (server) {
             mapToServer(server, config);
         }
     },
-    create: (pkg, path, details) => {
+    create: (package, path, details) => {
         global.actions[path] = details;
-        global.actions[path].pkg = pkg.shortname; // If I put the object in here I geta circular reference.
-        global.actions[path].obj = pkg.name;
+        global.actions[path].package = package.shortname; // If I put the object in here I geta circular reference.
+        global.actions[path].obj = package.name;
         return global.actions[path];
     },
     defaults: (server) => {
-        addForModels(server);
+        // addForModels(server);
     },
     mapRoutes: (server, config) => {
         // Routes are mapped to action paths.
@@ -119,13 +120,12 @@ const addForModels = (server) => {
     const showAction = require('./actions/show.js');
     const addAction = require('./actions/add.js');
     let act;
-    const AClass = require('./AClass');
     for (let name in global.classes) {
-        let cls = AClass.getClass(name);
+        let cls = AClass.getClass({name:name});
         act = setAction(`/${name}/new`, newAction);
 
         act.obj = cls.definition.name;
-        act.pkg = cls.definition.package;
+        act.package = cls.definition.package;
         act.cls = cls.definition.name;
 
         // Check if Create method exists
@@ -149,21 +149,21 @@ const addForModels = (server) => {
             }
             act = setAction(`/${name}/create`, newCreate);
             act.obj = cls.definition.name;
-            act.pkg = cls.definition.package
+            act.package = cls.definition.package
             act.cls = cls.definition.name;
         } else {
             act = setAction(`/${name}/create`, createAction);
             act.obj = cls.definition.name;
-            act.pkg = cls.definition.package;
+            act.package = cls.definition.package;
             act.cls = cls.definition.name;
         }
         act = setAction(`/${name}/list`, listAction);
         act.obj = cls.definition.name;
-        act.pkg = cls.definition.package;
+        act.package = cls.definition.package;
         act.cls = cls.definition.name;
         act = setAction(`/${name}/destory`, destroyAction);
         act.obj = cls.definition.name;
-        act.pkg = cls.definition.package;
+        act.package = cls.definition.package;
         act.cls = cls.definition.name;
         let inputs = {};
         for (let aname in cls.definition.attributes) {
@@ -189,7 +189,7 @@ const addForModels = (server) => {
                 };
                 act = setAction(`/${name}/add${assocUpper}`, newAddAction);
                 act.obj = cls.definition.name;
-                act.pkg = cls.definition.package;
+                act.package = cls.definition.package;
                 act.cls = cls.definition.name;
             } else {
                 inputs[aname] = {
@@ -203,7 +203,7 @@ const addForModels = (server) => {
         act = setAction(`/${name}`, showAction);
 
         act.obj = cls.definition.name;
-        act.pkg = cls.definition.package;
+        act.package = cls.definition.package;
         act.cls = cls.definition.name;
         inputs.id = {
             type: 'string',
@@ -225,7 +225,7 @@ const addForModels = (server) => {
         }
         act = setAction(`/${name}/update`, newUpdateAction);
         act.obj = cls.definition.name;
-        act.pkg = cls.definition.package;
+        act.package = cls.definition.package;
         act.cls = cls.definition.name;
     }
 };
@@ -262,64 +262,216 @@ const loadActions = (prefix, mDir) => {
 };
 
 const mapToServer = (server, config) => {
-    for (let i in global.actions) {
-        let gaction = global.actions[i];
-        if (i[0] !== '/') {
-            i = '/' + i;
+    // let's iterate over all of the interface of the application and add them to the path
+    let interfaces = _instances.AInterface;
+    for(let i in interfaces) {
+        let gaction = interfaces[i];
+        let normalizedName = gaction.path;
+        if (!normalizedName.startsWith('/')) { normalizedName = '/' + normalizedName; }
+        _updateRESTRoutes(server, normalizedName, gaction);
+
+        if (config.hasOwnProperty('urlPrefix')) {
+            normalizedName += config.urlPrefix + normalizedName;
+            _updateRESTRoutes(server, normalizedName, gaction);
         }
-        let normalizedName = i.replace('/' + global.topPackage.shortname, '');
-        if(normalizedName.includes('/upload')) {
-            server.post('*' + normalizedName, async (req, res) => {
-                req.url = req.url.replace(config.urlPrefix, '');
-                await upload(gaction, req.query, {req: req, res: res});
-            });   
-        } else {
-            server.post('*' + normalizedName, async (req, res) => {
-                req.url = req.url.replace(config.urlPrefix, '');
-                await execute(gaction, req.query, {req: req, res: res});
-            });
-            server.all('*' + normalizedName, async (req, res) => {
-                if (req.method === 'OPTIONS') {
-                    // Handle the CORS preflight request
-                    res.header('Access-Control-Allow-Origin', '*');
-                    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-                    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-                    return res.status(200).end(); // Respond with a 200 and end the response
-                }
-                req.url = req.url.replace(config.urlPrefix, '');
-                await execute(gaction, req.query, {req: req, res: res});
-            });
-        }
-        if (!config.hasOwnProperty('urlPrefix')) {
-            config.urlPrefix = '';
-        }
-        normalizedName = config.urlPrefix + normalizedName;
-        if(normalizedName.includes('/upload')) {
-            if(global.upload) {
-                server.post('*' + normalizedName, global.upload.single('file'), async (req, res) => {
-                    req.url = req.url.replace(config.urlPrefix, '');
-                    await upload(gaction, req.query, {req: req, res: res});
-                });
-            }
-        } else {
-            server.post('*' + normalizedName, async (req, res) => {
-                req.url = req.url.replace(config.urlPrefix, '');
-                await execute(gaction, req.query, {req: req, res: res});
-            });
-            server.all('*' + normalizedName, async (req, res) => {
-                if (req.method === 'OPTIONS') {
-                    // Handle the CORS preflight request
-                    res.header('Access-Control-Allow-Origin', '*');
-                    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-                    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-                    return res.status(200).end(); // Respond with a 200 and end the response
-                }
-                req.url = req.url.replace(config.urlPrefix, '');
-                await execute(gaction, req.query, {req: req, res: res});
-            });
+        if(config.mcp) {
+            _addMCPTool(config.mcpServer, gaction);
         }
     }
+    if(config.mcp) {
+        _addMCPRoutes(server, config.mcpServer);
+    }
 };
+
+function _addMCPRoutes(server, mcpServer) {
+    const sessions = new Map();
+
+    async function ensureSessionTransport(sessionId) {
+        let entry = sessions.get(sessionId);
+        if (entry) return entry;
+
+        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => sessionId });
+
+        // Connect once; reuse for all requests with this session
+        await mcpServer.connect(transport);
+
+        entry = {
+            transport,
+            close: () => {
+                try { transport.close(); } catch {}
+                sessions.delete(sessionId);
+            },
+        };
+        sessions.set(sessionId, entry);
+        return entry;
+    }
+
+    server.post("/mcp", async (req, res) => {
+        try {
+            const sid = req.header("Mcp-Session-Id") || "default-session";
+            const { transport } = await ensureSessionTransport(sid);
+
+            // MCP transport requires client to accept JSON + SSE (even if not streaming)
+            if (!req.headers.accept?.includes("application/json") || !req.headers.accept?.includes("text/event-stream")) {
+                return res.status(406).json({
+                    jsonrpc: "2.0",
+                    id: null,
+                    error: { code: -32000, message: "Not Acceptable: Client must accept both application/json and text/event-stream" },
+                });
+            }
+
+            await transport.handleRequest(req, res, req.body);
+        } catch (err) {
+            console.error("MCP /mcp error:", err);
+            if (!res.headersSent) {
+                res.status(500).json({ jsonrpc: "2.0", id: null, error: { code: -32603, message: "Internal server error" } });
+            }
+        }
+    });
+
+    server.get("/mcp/notifications", async (req, res) => {
+        try {
+            const sid = req.header("Mcp-Session-Id") || "default-session";
+            const { transport } = await ensureSessionTransport(sid);
+            await transport.handleSse(req, res);
+        } catch (err) {
+            console.error("MCP /mcp/notifications error:", err);
+            if (!res.headersSent) res.status(500).end();
+        }
+    });
+
+    server.delete("/mcp/session", (req, res) => {
+        const sid = req.header("Mcp-Session-Id") || "default-session";
+        const entry = sessions.get(sid);
+        if (entry) {
+            entry.close();
+            return res.status(204).end();
+        }
+        return res.status(404).json({ error: "Session not found" });
+    });
+}
+
+function _addMCPTool(mcpServer, interface) {
+
+    if(interface.path === '/ailtire/model/list') {
+        console.log('adding model list');
+    }
+    let def = {
+        description: interface.description,
+    }
+    if(interface.inputs) {
+        def.inputSchema = toZodObject(interface.inputs);
+    }
+    if(interface.outputs) {
+        def.outputSchema = toZodObject({retval: interface.outputs});
+    }
+    mcpServer.registerTool(interface.path, def, async (inputs) => {
+        let value = await execute(interface, inputs, {mcp: true});
+        try {
+
+            // let retval = z.object(def.outputSchema).parse({retval: value});
+            return {structuredContent: {retval: value}};
+        }
+        catch(e) {
+            console.error("Error parsing output", e);
+            throw e;
+        }
+
+    });
+}
+
+function toZodObject(inputs, title) {
+    let schema = {};
+    for (const [name, def] of Object.entries(inputs)) {
+        let {type, description, required, default: defValue, values, properties} = def;
+
+        // Map custom types into valid Zod types
+        let zodType;
+        if(type) {
+            switch (type.toLowerCase()) {
+                case 'json':
+                    zodType = z.object({}).passthrough();
+                    break;
+                case 'ref':
+                case 'string':
+                    zodType = z.string();
+                    break;
+                case 'integer':
+                    zodType = z.number().int();
+                    break;
+                case 'number':
+                    zodType = z.number();
+                    break;
+                case 'boolean':
+                    zodType = z.boolean();
+                    break;
+                case 'array':
+                    console.log('array', name);
+                    if(properties && typeof properties === 'object') {
+                        const shape = toZodObject(properties);
+                        zodType = z.array(z.object(shape));
+                    } else {
+                        zodType = z.array(z.any());
+                    }
+                    break;
+                case 'object':
+                    if(properties && typeof properties === 'object') {
+                        const shape = toZodObject(properties);
+                        zodType = z.object(shape);
+                    } else {
+                        zodType = z.object({}).passthrough();
+                    }
+                    break;
+                case 'null':
+                    zodType = z.null();
+                    break;
+                default:
+                    zodType = z.string();
+            }
+
+            // Add refinements
+            if (description) {
+                zodType = zodType.describe(description);
+            }
+            if (defValue !== undefined) {
+                zodType = zodType.default(defValue);
+            }
+            if (Array.isArray(values)) {
+                zodType = zodType.refine(val => values.includes(val));
+            }
+
+            schema[name] = required ? zodType : zodType.optional();
+        }
+    }
+    
+    return schema;
+}
+
+function _updateRESTRoutes(server, path, action) {
+    console.log('Adding route', path);
+    if(path.includes('/upload')) {
+        server.post('*' + path, async (req, res) => {
+            req.url = req.url.replace(config.urlPrefix, '');
+            await upload(action, req.query, {req: req, res: res});
+        });
+    } else {
+        server.post('*' + path, async (req, res) => {
+            req.url = req.url.replace(config.urlPrefix, '');
+            await execute(action, req.query, {req: req, res: res});
+        });
+        server.all('*' + path, async (req, res) => {
+            if (req.method === 'OPTIONS') {
+                // Handle the CORS preflight request
+                res.header('Access-Control-Allow-Origin', '*');
+                res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+                res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                return res.status(200).end(); // Respond with a 200 and end the response
+            }
+            // req.url = req.url.replace(config.urlPrefix, '');
+            await execute(action, req.query, {req: req, res: res});
+        });
+    }
+}
 
 const mapToServices = () => {
     for (let i in global.actions) {
@@ -511,11 +663,11 @@ const find = (name) => {
             // Look for automatic actions like create, destroy, etc.
             // First look if the first name is a class. If it is then check the methods on the class.
             // If it is available then return that action.
-            let cls = AClass.getClass(items[0]);
+            let cls = AClass.getClass({name:items[0]});
             if (cls) {
                 if (cls.definition.methods.hasOwnProperty(items[1])) {
                     let retval = cls.definition.methods[items[1]];
-                    retval.pkg = cls.definition.package;
+                    retval.package = cls.definition.package;
                     retval.obj = cls.definition.name;
                     return retval;
                 }

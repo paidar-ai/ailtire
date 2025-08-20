@@ -57,7 +57,7 @@ function _loadObject(clsName, file) {
     }
     let txt = fs.readFileSync(path.resolve(basedir,file),'utf-8');
     let tempObj = JSON.parse(txt);
-    let cls = AClass.getClass(tempObj._clsName);
+    let cls = AClass.getClass({name:tempObj._clsName});
     let obj = new cls({id: tempObj.id, _loading: true});
 
     try {
@@ -104,7 +104,7 @@ function _load(obj) {
 
 function _loadClass(cls) {
     if(typeof cls === 'string') {
-        cls = AClass.getClass(cls);
+        cls = AClass.getClass({name:cls});
     }
     let clsName = cls.definition.name;
     let dname = path.resolve(global.ailtire.config.persist.basedir, clsName);

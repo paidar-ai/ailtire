@@ -210,22 +210,22 @@ const useCaseGenerator = (usecase, output, urlPath) => {
     }
 };
 const scenarioGenerator = (usecase, scenario, output, urlPath) => {
-    let pkg = global.packages[usecase.package.replace(/\s/g,'')];
+    let package = global.packages[usecase.package.replace(/\s/g,'')];
     let pkgs = {};
     for(let i in scenario.steps) {
         let step = scenario.steps[i];
         let act = Action.find(`/${step.action.toLowerCase()}`);
         if(act) {
             step.act = act;
-            if (!pkgs.hasOwnProperty(act.pkg.shortname)) {
-                pkgs[act.pkg.shortname] = {
-                    pkg: act.pkg,
+            if (!pkgs.hasOwnProperty(act.package.shortname)) {
+                pkgs[act.package.shortname] = {
+                    package: act.package,
                     models: {}
                 }
             }
             if(act.cls) {
                 let name = act.cls.toLowerCase();
-                pkgs[act.pkg.shortname].models[name] = name;
+                pkgs[act.package.shortname].models[name] = name;
             }
         }
     }
@@ -235,7 +235,7 @@ const scenarioGenerator = (usecase, scenario, output, urlPath) => {
             usecase: usecase,
             scenario: scenario,
             pkgs: pkgs,
-            package: pkg,
+            package: package,
             shortname: scenario.name.replace(/ /g, ''),
             actors: scenario.actors
         },
@@ -280,7 +280,7 @@ const actorsGenerator = (actors, output) => {
     };
     Generator.process(files, output);
 };
-const environGenerator = (pkg, env, output, urlPath) => {
+const environGenerator = (package, env, output, urlPath) => {
 
     let deploy = {
         ports: {},
@@ -461,8 +461,8 @@ const environGenerator = (pkg, env, output, urlPath) => {
             envName: env.name,
             environ: env,
             deploy: deploy,
-            pkg: pkg,
-            package: pkg,
+            package: package,
+            package: package,
             pageDir: urlPath
         },
         targets: {
@@ -547,9 +547,9 @@ const addDocs = (obj, files, output, urlPath) => {
 
 const getStack = (name) => {
     for(let pname in global.packages)  {
-        let pkg = global.packages[pname];
-        if(pkg.deploy.name === name) {
-            return pkg;
+        let package = global.packages[pname];
+        if(package.deploy.name === name) {
+            return package;
         }
     }
     return null;

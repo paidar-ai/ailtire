@@ -1,9 +1,3 @@
-const path = require('path');
-const exec = require('child_process').spawnSync;
-const sLoader = require('../../src/Server/Loader');
-const APackage = require('../../src/Server/APackage');
-const Build = require("../../src/Services/BuildEngine");
-const {spawnSync: spawn} = require("child_process");
 
 module.exports = {
     friendlyName: 'install',
@@ -36,6 +30,13 @@ module.exports = {
     },
 
     fn: function (inputs, env) {
+
+        const path = require('path');
+        const exec = require('child_process').spawnSync;
+        const sLoader = require('../../src/Server/Loader');
+        const APackage = require('../../src/Server/APackage');
+        const Build = require("../../src/Services/BuildEngine");
+        const {spawnSync: spawn} = require("child_process");
         // goto the deploy directory at the top level.
         // Call docker stack deploy -c docker-compose.yml
         // Iterate down to the Packages the same thing.
@@ -47,8 +48,8 @@ module.exports = {
         let repo = inputs.repo || '';
         let apath = path.resolve('.');
         let topPackage = sLoader.processPackage(apath);
-        let pkg = APackage.getPackage(inputs.package);
-        installPackage(pkg, {name: name, env: environ,repo: repo});
+        let package = APackage.getPackage(inputs.package);
+        installPackage(package, {name: name, env: environ,repo: repo});
         return `Install Package`;
     }
 };

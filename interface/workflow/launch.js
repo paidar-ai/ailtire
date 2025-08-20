@@ -30,7 +30,7 @@ module.exports = {
             env.res.json({id: instanceid});
             AWorkflowInstance.launch(workflow, inputs);
         } else {
-            AEvent.emit("workflow.failed", {message:"Workflow not found"});
+            AEvent.emit({event:"workflow.failed", data: {message:"Workflow not found"} });
         }
         return null;
     }

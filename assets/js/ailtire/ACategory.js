@@ -289,7 +289,7 @@ export default class ACategory {
             if (result[wname].activities) {
                 details += `|activities^${Object.keys(result[wname].activities).length}`;
             }
-            records.push({recid: wname, name: result[wname].pkg, value: wname, detail: details});
+            records.push({recid: wname, name: result[wname].package, value: wname, detail: details});
         }
 
         w2ui['objlist'].records = records;

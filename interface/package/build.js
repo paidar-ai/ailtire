@@ -1,7 +1,3 @@
-const path = require('path');
-const sLoader = require('../../src/Server/Loader');
-const Build = require('../../src/Services/BuildEngine');
-const APackage = require('../../src/Server/APackage');
 
 module.exports = {
     friendlyName: 'build',
@@ -44,6 +40,10 @@ module.exports = {
     },
 
     fn: function (inputs, env) {
+        const path = require('path');
+        const sLoader = require('../../src/Server/Loader');
+        const Build = require('../../src/Services/BuildEngine');
+        const APackage = require('../../src/Server/APackage');
         // goto the deploy directory at the top level.
         // Call docker stack deploy -c docker-compose.yml
         // Iterate down to the Packages the same thing.
@@ -54,15 +54,15 @@ module.exports = {
 
         console.log("Analyzing the Project");
         let topPackage = sLoader.processPackage(apath);
-        let pkg = APackage.get(inputs.package);
-        console.log("Starting the build for ", pkg.name);
+        let package = APackage.get(inputs.package);
+        console.log("Starting the build for ", package.name);
         // Build the top level deploy
         // Build.services(apath + '/deploy');
         // Build all of the images.
         // if(inputs.recursive) {
         //     Build.services(topPackage.dir);
         // }
-        Build.pkg(pkg, {name: name,recursive:inputs.recursive, env: inputs.env, repo: inputs.repo});
+        Build.pkg(package, {name: name,recursive:inputs.recursive, env: inputs.env, repo: inputs.repo});
         return `Building Application`;
     }
 };

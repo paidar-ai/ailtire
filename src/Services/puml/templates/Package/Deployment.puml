@@ -121,7 +121,7 @@ package  "<%= package.name %>" #<%= package.color.replace(/\#/,''); %> {
         %>
 
 <% for(let sname in package.subpackages) {
-    let spkg = package.subpackages[sname];
+    let spackage = package.subpackages[sname];
 %>
 package  "<%= sname %>" as pkg<%= sname %> #lightgray {
     card <%= sname %>parent <%= deploy.networks.children.color %> [
@@ -130,7 +130,7 @@ package  "<%= sname %>" as pkg<%= sname %> #lightgray {
     <%= sname %>parent ==[<%= deploy.networks.children.color %>]= children
 }
 
-<%= spkg.deploy.name %>latest --> pkg<%= sname %>
+<%= spackage.deploy.name %>latest --> pkg<%= sname %>
 
 <% } %>
 

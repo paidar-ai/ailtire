@@ -108,14 +108,14 @@ module.exports = {
         try {
             let pkg= null;
             try {
-                pkg = APackage.get(cls.package);
+                package = APackage.get(cls.package);
             } catch(e) {
-                pkg = global.topPackage;
-                cls.package = pkg.name;
+                package = global.topPackage;
+                cls.package = package.name;
             }
-            if(!pkg.classes) { pkg.classes = {}; }
-            if (pkg.classes.hasOwnProperty(cls.name)) {
-                let oClass = pkg.classes[cls.name];
+            if(!package.classes) { package.classes = {}; }
+            if (package.classes.hasOwnProperty(cls.name)) {
+                let oClass = package.classes[cls.name];
                 oClass.definition.description = cls.description;
 
                 for (let aname in cls.attributes) {
@@ -125,14 +125,14 @@ module.exports = {
                     oClass.definition.associations[aname] = cls.associations[aname];
                 }
                 _save(oClass);
-                AEvent.emit('class.updated', cls);
+                AEvent.emit({event:'class.updated', data: cls });
                 return oClass;
             } else {
-                let saveDirectory = `${pkg.definition.dir}/models/${cls.name.replace(/\s/g, '')}`;
+                let saveDirectory = `${package.definition.dir}/models/${cls.name.replace(/\s/g, '')}`;
                 cls.dir = saveDirectory;
                 let retval = _save({definition: cls});
-                AEvent.emit('class.created', retval);
-                return _load(pkg, cls.dir);
+                AEvent.emit({event:'class.created', data: retval });
+                return _load(package, cls.dir);
             }
         }
         catch(e) {
@@ -140,9 +140,9 @@ module.exports = {
             
         }
     },
-    load: (pkg, dir) => {
+    load: (package, dir) => {
 
-        _load(pkg, dir);
+        _load(package, dir);
     },
     save: (cls) => {
         return _save(cls);
@@ -423,22 +423,22 @@ function loadClassMethods(mClass, mDir) {
     }
 };
 
-async function loadDocs(pkg, dir) {
+async function loadDocs(package, dir) {
    // const {default: ADocumentation} = await import("./ADocumentation.mjs");
-   // ADocumentation.load(pkg, dir);
+   // ADocumentation.load(package, dir);
 }
-function _load(pkg, dir) {
+function _load(package, dir) {
     const classProxy = require("../Proxy/ClassProxy");
     
     let myClass = require(dir + '/index.js');
 
-    myClass.package = pkg;
+    myClass.package = package;
     myClass.dir = dir;
     let myProxy = new Proxy(myClass, classProxy);
     // set the owners array for persistence.
     myClass.definition.owners = new Array();
     myClass.definition.dir = dir;
-    pkg.classes[myClass.definition.name] = myProxy;
+    package.classes[myClass.definition.name] = myProxy;
     global.classes[myClass.definition.name] = myProxy;
     global[myClass.definition.name] = myProxy;
     loadClassMethods(myClass, dir);

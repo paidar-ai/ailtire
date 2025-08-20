@@ -6,8 +6,8 @@ module.exports = {
     save: (action, dir) => {
         _save(action, dir);
     },
-    checker: (pkg, handler) => {
-        _checker(pkg, handler);
+    checker: (package, handler) => {
+        _checker(package, handler);
     },
     load: (file) => {
         _load(file);
@@ -58,7 +58,7 @@ function _save(handler, package) {
     return true;
 }
 
-function _checker(pkg, handler) {
+function _checker(package, handler) {
     
     let ename = handler.name;
     if (!global.events.hasOwnProperty(ename)) {
@@ -69,7 +69,7 @@ function _checker(pkg, handler) {
     // Find the emitter.
     // Event syntax is ClassName.event
     const AClass = require("./AClass");
-    let cls = AClass.getClass(ename.split(/\./)[0]);
+    let cls = AClass.getClass({name:ename.split(/\./)[0]});
     if (cls) {
         handler.emitter = cls;
         global.events[ename].emitter = cls;
@@ -96,7 +96,7 @@ function _checker(pkg, handler) {
         }
         cls.definition.package.definition.messages[ename] = global.events[ename];
     }
-    global.events[ename].handlers[pkg.prefix] = handler;
+    global.events[ename].handlers[package.prefix] = handler;
 }
 
 

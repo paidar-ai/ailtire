@@ -280,7 +280,7 @@ const modelGenerator = (model, output, urlPath) => {
 const imageGenerator = (image, output, urlPath) => {
     let package = global.topPackage;
     try {
-        package = APackage.getPackage(image.pkg);
+        package = APackage.getPackage(image.package);
     }
     catch(e) {
 
@@ -318,29 +318,29 @@ const packageGenerator = (package, output, urlPath, parent, grand_parent) => {
     let depkgs = {};
     let depends = [];
     for(let i in package.depends) {
-        let dpkg = package.depends[i];
-        depkgs[dpkg.prefix] = dpkg;
-        depends.push({from: package.prefix, to:dpkg.prefix});
+        let dpackage = package.depends[i];
+        depkgs[dpackage.prefix] = dpackage;
+        depends.push({from: package.prefix, to:dpackage.prefix});
     }
     for(let sname in package.subpackages) {
-        let spkg = package.subpackages[sname];
-        for(let i in spkg.depends) {
-            let dpkg = spkg.depends[i];
-            depkgs[dpkg.prefix] = dpkg;
-            depends.push({from: spkg.prefix, to:dpkg.prefix});
+        let spackage = package.subpackages[sname];
+        for(let i in spackage.depends) {
+            let dpackage = spackage.depends[i];
+            depkgs[dpackage.prefix] = dpackage;
+            depends.push({from: spackage.prefix, to:dpackage.prefix});
         }
     }
     let dpkgs = {subpackages:{}};
     dpkgs.subpackages[global.topPackage.shortname] = {subpackages:{}};
     for(let prefix in depkgs) {
         let path = prefix.split('/');
-        let depkg = depkgs[prefix];
+        let depackage = depkgs[prefix];
         let map = dpkgs;
         for(let i in path) {
             let value = path[i];
             if(value) {
                 if (!map.subpackages.hasOwnProperty(value)) {
-                    map.subpackages[value] = {subpackages: {}, shortname: value, color: depkg.color};
+                    map.subpackages[value] = {subpackages: {}, shortname: value, color: depackage.color};
                 }
                 map = map.subpackages[value];
             }
@@ -425,7 +425,7 @@ const useCaseGenerator = (usecase, output, urlPath) => {
     }
 };
 const scenarioGenerator = (usecase, scenario, output, urlPath) => {
-    let pkg = global.packages[usecase.package.replace(/\s/g, '')];
+    let package = global.packages[usecase.package.replace(/\s/g, '')];
     let pkgs = {};
     for (let i in scenario.steps) {
         let step = scenario.steps[i];
@@ -433,15 +433,15 @@ const scenarioGenerator = (usecase, scenario, output, urlPath) => {
         let act = Action.find(`/${step.action.toLowerCase()}`);
         if (act) {
             step.act = act;
-            if (!pkgs.hasOwnProperty(act.pkg.shortname)) {
-                pkgs[act.pkg.shortname] = {
-                    pkg: act.pkg,
+            if (!pkgs.hasOwnProperty(act.package.shortname)) {
+                pkgs[act.package.shortname] = {
+                    package: act.package,
                     models: {}
                 }
             }
             if (act.cls) {
                 let name = act.cls.toLowerCase();
-                pkgs[act.pkg.shortname].models[name] = name;
+                pkgs[act.package.shortname].models[name] = name;
             }
         }
         else {
@@ -454,7 +454,7 @@ const scenarioGenerator = (usecase, scenario, output, urlPath) => {
             usecase: usecase,
             scenario: scenario,
             pkgs: pkgs,
-            package: pkg,
+            package: package,
             shortname: scenario.name.replace(/ /g, ''),
             actors: scenario.actors,
             Action: Action
@@ -519,7 +519,7 @@ const environmentGenerator = (env, output, urlPath) => {
     // Get the doc from the package and add them to the targets list
     Generator.process(files, output + urlPath);
 };
-const environGenerator = (pkg, env, output, urlPath) => {
+const environGenerator = (package, env, output, urlPath) => {
 
     let deploy = {
         ports: {},
@@ -558,12 +558,12 @@ const environGenerator = (pkg, env, output, urlPath) => {
 
     deploy.services = env.definition.services;
     let environment = undefined;
-    if(!pkg.physical) {
-        pkg.physical = global.topPackage.physical;
+    if(!package.physical) {
+        package.physical = global.topPackage.physical;
     }
-    if(pkg.physical) {
-        if(pkg.physical.environments.hasOwnProperty(env.name)) {
-                    environment = pkg.physical.environments[env.name];
+    if(package.physical) {
+        if(package.physical.environments.hasOwnProperty(env.name)) {
+                    environment = package.physical.environments[env.name];
                 }
             }
             for (let sname in env.definition.services) {
@@ -707,7 +707,7 @@ const environGenerator = (pkg, env, output, urlPath) => {
     }
 
     if(!environment) {
-        console.error("Environment not definedd: not phsyuical:", pkg.name);
+        console.error("Environment not definedd: not phsyuical:", package.name);
         return;
     }
     let files = {
@@ -716,9 +716,9 @@ const environGenerator = (pkg, env, output, urlPath) => {
             environ: env,
             deploy: deploy,
             colors: colors,
-            pkg: pkg,
+            package: package,
             environment: environment,
-            package: pkg,
+            package: package,
             pageDir: urlPath
         },
         targets: {
@@ -726,7 +726,7 @@ const environGenerator = (pkg, env, output, urlPath) => {
             ':envName:/deployment.puml': {template: '/templates/Environment/Deployment.puml'},
         },
     };
-    if(pkg.physical && environment) {
+    if(package.physical && environment) {
         console.log("Physical Stuff:", output + urlPath);
         files.targets[':envName:/physical-network.puml']= {template: '/templates/Environment/physical-network.puml'};
         files.targets[':envName:/physical-deployment.puml']= {template: '/templates/Environment/physical-deployment.puml'};
@@ -832,9 +832,9 @@ const addDocs = (obj, files, output, urlPath) => {
 
 const getStack = (name) => {
     for (let pname in global.packages) {
-        let pkg = global.packages[pname];
-        if (pkg.deploy.name === name) {
-            return pkg;
+        let package = global.packages[pname];
+        if (package.deploy.name === name) {
+            return package;
         }
     }
     return null;

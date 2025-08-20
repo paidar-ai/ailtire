@@ -46,7 +46,7 @@ package ailtire #lightgray {
         Activity --|> Workflow
     }
     package Logical #white {
-        package "Package" as pkg #lightblue {
+        package "Package" as package #lightblue {
         }
         package "Action" #lightblue {
         }
@@ -76,11 +76,11 @@ package ailtire #lightgray {
     Image --> ms
     UseCase "1" *--> "n" Scenario
     UseCase "1" <- "n" Actor
-    pkg "1" .> "n" ms
-    pkg "1" .> "n" ss
+    package "1" .> "n" ms
+    package "1" .> "n" ss
     Scenario .> Action
-    pkg -> UseCase
-    pkg --> Model
+    package -> UseCase
+    package --> Model
 
     Actor ...> TestSuite
     UseCase ...> TestSuite
@@ -88,7 +88,7 @@ package ailtire #lightgray {
     Test ...> Action
 
     Model -> Action
-    pkg -> Action
+    package -> Action
     Workspace ..> ms
     Activity ..> Action
     Activity ..> Scenario

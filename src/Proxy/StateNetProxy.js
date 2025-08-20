@@ -1,6 +1,4 @@
 const funcHandler = require('./MethodProxy');
-const AEvent = require('../Server/AEvent');
-const AClass = require('../Server/AClass');
 const Action = require('../Server/Action');
 /*
 statenet: {
@@ -107,7 +105,7 @@ module.exports = {
         // configuration in the ailtire config file.
         if (!statenet[currentState].events.hasOwnProperty(event)) {
             let retval = undefined;
-            if (global.ailtire.config.statenet && global.ailtire.config.statenet === "strict") {
+            if (global.ailtire?.config?.statenet && global.ailtire?.config?.statenet === "strict") {
                 console.error(`There is not a transistion from current state ${currentState} with the event ${event} for ${proxy.id}`);
             } else {
                 return _runMethod(proxy, event, args[0]);
@@ -142,7 +140,7 @@ function _processTransition(statenet, currentState, transition, event, proxy, ar
     proxy._persist = { dirty: true };
 
 
-    AEvent.emit(`${proxy.definition.name}.${proxy._state}`, {obj: proxy.toJSON});
+    AEvent.emit({event:`${proxy.definition.name}.${proxy._state}`, data: {obj: proxy.toJSON} });
     _handleInheritanceEvents(proxy);
     _handleEntryActions(statenet, statenet[transition.state], proxy);
     
@@ -160,7 +158,7 @@ function _getStateNet(definition) {
     if (definition.hasOwnProperty('statenet')) {
         return definition.statenet;
     } else if (definition.hasOwnProperty('extends')) {
-        let parent = AClass.getClass(definition.extends);
+        let parent = AClass.getClass({name:definition.extends});
         return _getStateNet(parent.definition);
     } else {
         return false;
@@ -236,8 +234,8 @@ function _executeAction(paction, pobj, pargs) {
 function _handleInheritanceEvents(obj) {
     let definition = obj.definition;
     while (definition.extends) {
-        let cls = AClass.getClass(definition.extends);
+        let cls = AClass.getClass({name:definition.extends});
         definition = cls.definition;
-        AEvent.emit(`${definition.name}.${obj._state}`, { obj: obj });
+        AEvent.emit({event:`${definition.name}.${obj._state}`, data: { obj: obj } });
     }
 }

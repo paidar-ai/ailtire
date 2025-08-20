@@ -21,7 +21,7 @@ module.exports = {
             description: 'List of packages used in the scenario separated',
             required: true
         },
-        pkg: {
+        package: {
             type: 'json',
             description: 'Owning Package name',
         },
@@ -51,7 +51,7 @@ module.exports = {
         if(!scenario) return "Scenario not found";
         let diagram = inputs.diagram;
         let pkgs = inputs.pkgs;
-        let pkg = inputs.pkg;
+        let package = inputs.package;
         let usecase = inputs.usecase;
         
         diagram = diagram || "Scenario";
@@ -62,7 +62,7 @@ module.exports = {
             usecase: usecase,
             scenario : scenario,
             pkgs : pkgs,
-            package : pkg,
+            package : package,
             shortname : scenario.name.replace(/ /g, ''),
             actors : scenario.actors,
         });

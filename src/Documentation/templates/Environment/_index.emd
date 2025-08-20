@@ -1,12 +1,12 @@
 ---
 layout: default
 title: Environment <%= environ.name %>
-permalink: environment-<%= pkg.prefix.replace(/\//g, '-') %>-<%= environ.name %>
+permalink: environment-<%= package.prefix.replace(/\//g, '-') %>-<%= environ.name %>
 parent: environment-<%= environ.name %>
 grand_parent: Environments
 ---
 
-### <%= pkg.name %> <%= environ.name %>
+### <%= package.name %> <%= environ.name %>
 <%= environ.description %>
 
 #### Deployment

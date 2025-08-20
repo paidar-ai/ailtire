@@ -41,7 +41,7 @@ function _loadObject(dir, objectType, file) {
     let myFile = fs.readFileSync(file, {encoding: 'utf-8'});
     // Only loads
     let tobj = YAML.parse(myFile);
-    let myClass = AClass.getClass(objectType);
+    let myClass = AClass.getClass({name:objectType});
     let mobj = new myClass(tobj);
     _loadObjectDirectory(mobj, dir);
     return mobj;

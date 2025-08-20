@@ -23,7 +23,7 @@ module.exports = {
         let modelName = env.req.url.split(/\//)[1];
         let apath = path.resolve(__dirname + '/../../views/model/new.ejs');
         let str = fs.readFileSync(apath, 'utf8');
-        let sendString = renderer.renderString('default', str, {className: modelName, definition: AClass.getClass(modelName).definition, app: {name:'edgemere'}} );
+        let sendString = renderer.renderString('default', str, {className: modelName, definition: AClass.getClass({name:modelName).definition, app: {name:'edgemere'}} });
         env.res.end(sendString);
     }
 };

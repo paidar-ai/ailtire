@@ -28,7 +28,7 @@ module.exports = {
     fn: function (inputs, env) {
         // Find the scenario from the usecase.
         let cname = inputs.id;
-        let cls = AClass.getClass(cname);
+        let cls = AClass.getClass({name:cname});
         cls.name = cname;
         cls.id = cname;
         let jcls = cls.definition;

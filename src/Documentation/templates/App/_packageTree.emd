@@ -1,8 +1,8 @@
 <% for(let i in pkgs) {
-    let pkg = pkgs[i];
+    let package = pkgs[i];
     let newBullet = "  " + bullet;
 -%>
-<%= bullet %> [<%= pkg.name %>](package-<%= pkg.prefix.replace(/\//g,'-') %>)
-<% if(pkg.hasOwnProperty('subpackages')) { -%>
-<%- partial('./templates/App/_packageTree.emd', {pkgs: pkg.subpackages, bullet: newBullet}) -%>
+<%= bullet %> [<%= package.name %>](package-<%= package.prefix.replace(/\//g,'-') %>)
+<% if(package.hasOwnProperty('subpackages')) { -%>
+<%- partial('./templates/App/_packageTree.emd', {pkgs: package.subpackages, bullet: newBullet}) -%>
 <% } } -%>

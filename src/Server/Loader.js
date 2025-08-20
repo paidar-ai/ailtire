@@ -5,16 +5,10 @@ const classProxy = require('../Proxy/ClassProxy');
 const packageProxy = require('../Proxy/PackageProxy');
 const apiGenerator = require('../Documentation/api');
 const YAML = require('yamljs');
-const AClass = require('./AClass');
-const AActor = require('./AActor');
-const AHandler = require('./AHandler');
-const ANote = require('./ANote');
-const AStack = require('./AStack');
-const AActivityInstance = require("./AActivityInstance");
 
 module.exports = {
-    analyze: (pkg) => {
-        analyzeApp(pkg);
+    analyze: (package) => {
+        analyzeApp(package);
     }, processPackage: (dir) => {
         if (!global.ailtire) {
             global.ailtire = {
@@ -107,22 +101,22 @@ const processDirectory = dir => {
     if (isDirectory(actorDir)) {
         AActor.loadAll(actorDir);
     }
-    let pkg = null;
+    let package = null;
     let apiDir = dir + '/api';
     if (isDirectory(apiDir)) {
-        pkg = loadDirectory(apiDir, '');
+        package = loadDirectory(apiDir, '');
     } else {
-        pkg = loadDirectory(dir, '');
+        package = loadDirectory(dir, '');
     }
     let deployDir = dir + '/deploy';
     if (isDirectory(deployDir)) {
-        loadDeploy(pkg, pkg.prefix, deployDir);
+        loadDeploy(package, package.prefix, deployDir);
     }
     let physicalDir = dir + '/physical';
     if (isDirectory(physicalDir)) {
-        loadPhysical(pkg, pkg.prefix, physicalDir);
+        loadPhysical(package, package.prefix, physicalDir);
     }
-    return pkg;
+    return package;
 };
 // First look load the index file as the name of the top subsystem.
 
@@ -133,47 +127,47 @@ const getDirectories = source => fs.readdirSync(source).map(name => path.join(so
 const getFiles = source => fs.readdirSync(source).map(name => path.join(source, name)).filter(isFile);
 
 let reservedDirs = {
-    actors: (pkg, prefix, dir) => {
+    actors: (package, prefix, dir) => {
         AActor.loadAll(dir);
-    }, node_modules: (pkg, prefix, dir) => {
+    }, node_modules: (package, prefix, dir) => {
         // Do Nothing.
         // Just skip
-    }, doc: (pkg, prefix, dir) => {
-        loadDocs(pkg, dir);
-    }, deploy: (pkg, prefix, dir) => {
-        pkg = loadDeploy(pkg, prefix, dir);
-    }, handlers: (pkg, prefix, dir) => {
+    }, doc: (package, prefix, dir) => {
+        loadDocs(package, dir);
+    }, deploy: (package, prefix, dir) => {
+        package = loadDeploy(package, prefix, dir);
+    }, handlers: (package, prefix, dir) => {
         // The Interface directory can be multiple directories deep which map to routes A/B/C
-        pkg.handlers = loadHandlers(pkg, prefix, dir);
-    }, interface: (pkg, prefix, dir) => {
+        package.handlers = loadHandlers(package, prefix, dir);
+    }, interface: (package, prefix, dir) => {
         //The Interface directory can be multiple directories deep which map to routes A/B/C
-        pkg.interfaceDir = dir;
-        pkg.interface = loadActions(pkg, prefix, dir);
-    }, models: (pkg, prefix, dir) => {
-        // This stores the pkg classes.
+        package.interfaceDir = dir;
+        package.interface = loadActions(package, prefix, dir);
+    }, models: (package, prefix, dir) => {
+        // This stores the package classes.
         // Process the Model Include Files
-        pkg.classes = {};
-        pkg.includes = {};
+        package.classes = {};
+        package.includes = {};
         let models = getDirectories(dir);
         for (let i in models) {
             // let modelDir = models[i].replace(/\\/g,'/');
             let modelDir = models[i];
             // let model = path.basename(modelDir);
-            AClass.load(pkg, modelDir);
+            AClass.load(package, modelDir);
         }
-    }, workflows: (pkg, prefix, dir) => {
-        loadWorkflows(pkg, "", dir);
-    }, usecases: (pkg, prefix, dir) => {
-        pkg.usecases = {};
+    }, workflows: (package, prefix, dir) => {
+        loadWorkflows(package, "", dir);
+    }, usecases: (package, prefix, dir) => {
+        package.usecases = {};
         let usecases = getDirectories(dir);
         for (let i in usecases) {
             // let modelDir = models[i].replace(/\\/g,'/');
             let ucDir = usecases[i];
             let myUC = require(ucDir + '/index.js');
-            myUC.package = pkg.name;
-            myUC.prefix = pkg.prefix;
+            myUC.package = package.name;
+            myUC.prefix = package.prefix;
             myUC.dir = ucDir;
-            pkg.usecases[myUC.name.replace(/\s/g, '')] = myUC;
+            package.usecases[myUC.name.replace(/\s/g, '')] = myUC;
             global.usecases[myUC.name.replace(/\s/g, '')] = myUC;
             loadDocs(myUC, ucDir + '/doc');
             loadUCScenarios(myUC, ucDir);
@@ -181,10 +175,10 @@ let reservedDirs = {
     }
 };
 
-const loadWorkflows = (pkg, prefix, dir) => {
+const loadWorkflows = (package, prefix, dir) => {
     if (fs.existsSync(dir)) {
-        if (!pkg.hasOwnProperty('workflows')) {
-            pkg.workflows = {};
+        if (!package.hasOwnProperty('workflows')) {
+            package.workflows = {};
         }
         let category = {};
         let workflows = [];
@@ -197,8 +191,8 @@ const loadWorkflows = (pkg, prefix, dir) => {
             } else if (ext === '.js') {
                 let workflow = require(file);
                 workflow.baseDir = dir;
-                pkg.workflows[workflow.name] = workflow;
-                workflow.pkg = pkg.shortname;
+                package.workflows[workflow.name] = workflow;
+                workflow.package = package.shortname;
                 workflow.category = prefix;
                 if (!global.hasOwnProperty('workflows')) {
                     global.workflows = {};
@@ -224,7 +218,7 @@ const loadWorkflows = (pkg, prefix, dir) => {
                 if (prefix) {
                     mprefix = `${prefix}/${mprefix}`;
                 }
-                let subcategory = loadWorkflows(pkg, mprefix, mdir);
+                let subcategory = loadWorkflows(package, mprefix, mdir);
                 category.subcategories.push(subcategory);
             }
         }
@@ -236,9 +230,9 @@ const loadWorkflows = (pkg, prefix, dir) => {
         return category;
     }
 };
-const loadDocs = (pkg, dir) => {
+const loadDocs = (package, dir) => {
     /* const { default: ADocumentation } = await import("./ADocumentation.mjs");
-     ADocumentation.load(pkg, dir);
+     ADocumentation.load(package, dir);
 
      */
     if (fs.existsSync(dir)) {
@@ -251,10 +245,10 @@ const loadDocs = (pkg, dir) => {
             let nfile = file.replace(/[\/\\]/g, '/');
             nfiles.push(nfile.replace(ndir, ''));
         }
-        pkg.doc = {basedir: dir, files: nfiles};
+        package.doc = {basedir: dir, files: nfiles};
     } else {
         fs.mkdirSync(dir);
-        pkg.doc = {basedir: dir, files: []};
+        package.doc = {basedir: dir, files: []};
     }
 }
 
@@ -291,9 +285,9 @@ const _loadEnvironments = (obj, prefix, dir, files) => {
     }
 }
 
-const _getPhysicalModule = (pkg, resource, moduleName) => {
-    if (pkg.physical.modules.hasOwnProperty(moduleName)) {
-        return pkg.physical.modules[moduleName];
+const _getPhysicalModule = (package, resource, moduleName) => {
+    if (package.physical.modules.hasOwnProperty(moduleName)) {
+        return package.physical.modules[moduleName];
     }
     if (global.physical.modules.hasOwnProperty(moduleName)) {
         return global.physical.modules[moduleName];
@@ -302,15 +296,15 @@ const _getPhysicalModule = (pkg, resource, moduleName) => {
 
 }
 
-const _checkPhysicalResourceTypes = (pkg, obj, path) => {
+const _checkPhysicalResourceTypes = (package, obj, path) => {
 
     for (let name in obj) {
         let item = obj[name];
         if (typeof item === 'object') {
-            _checkPhysicalResourceTypes(pkg, item, `${path}/${name}`)
+            _checkPhysicalResourceTypes(package, item, `${path}/${name}`)
         } else if (name === 'type') {
             try {
-                let module = _getPhysicalModule(pkg, obj, item);
+                let module = _getPhysicalModule(package, obj, item);
                 obj._module = module;
             } catch (e) {
                 if (!global.ailtire.hasOwnProperty('error')) {
@@ -318,7 +312,7 @@ const _checkPhysicalResourceTypes = (pkg, obj, path) => {
                 }
                 global.ailtire.error.push({
                     type: 'physical.module',
-                    object: {type: "Environment", id: pkg.id, name: item},
+                    object: {type: "Environment", id: package.id, name: item},
                     message: `Could not find the physical type: ${item} for ${path}`,
                     data: obj,
                     lookup: 'physical/module/list'
@@ -329,7 +323,7 @@ const _checkPhysicalResourceTypes = (pkg, obj, path) => {
     }
 }
 
-const _checkLocations = (pkg, obj) => {
+const _checkLocations = (package, obj) => {
     let locations = {};
     for (let ename in obj.environments) {
         let defaultLocation = "";
@@ -418,7 +412,7 @@ const _checkLocations = (pkg, obj) => {
     }
 
 }
-const _checkNetworks = (pkg, obj) => {
+const _checkNetworks = (package, obj) => {
     for (let ename in obj.environments) {
         // Check that each network has a switch or router cooresponding.
         // Check that each device in compute and storage has a network cooresponding.
@@ -518,23 +512,23 @@ const _checkNetworks = (pkg, obj) => {
         }
     }
 }
-const _checkCompute = (pkg, obj) => {
+const _checkCompute = (package, obj) => {
 
 }
-const _checkEnvironments = (pkg) => {
+const _checkEnvironments = (package) => {
     // Check that all of the types have a cooresponding module.
     // This should travse the complete module and environments structure and check that the type matchs a module.
     try {
-        _checkPhysicalResourceTypes(pkg, pkg.physical, "");
-        _checkLocations(pkg, pkg.physical);
-        _checkNetworks(pkg, pkg.physical);
-        _checkCompute(pkg, pkg.physical);
+        _checkPhysicalResourceTypes(package, package.physical, "");
+        _checkLocations(package, package.physical);
+        _checkNetworks(package, package.physical);
+        _checkCompute(package, package.physical);
     } catch (e) {
         console.error("CheckPhysicalResource Types failed:", e);
     }
 }
 
-const _checkDeployments = (pkg) => {
+const _checkDeployments = (package) => {
 
 }
 
@@ -558,7 +552,7 @@ const _loadPhysicalDefaults = () => {
     _loadEnvironments(global.physical.environments, "", mdir, mfiles);
 
 }
-const loadPhysical = (pkg, prefix, dir) => {
+const loadPhysical = (package, prefix, dir) => {
 
     let physical = {
         dir: dir, prefix: prefix, environments: {}, modules: {}
@@ -575,17 +569,17 @@ const loadPhysical = (pkg, prefix, dir) => {
     mfiles = fs.readdirSync(mdir);
 
     _loadEnvironments(physical.environments, "", mdir, mfiles);
-    pkg.physical = physical;
+    package.physical = physical;
     // Now check the environment files for references to the modules, consistency in the configurations.
-    _checkEnvironments(pkg);
+    _checkEnvironments(package);
 
     // Now check all of the deployments that they can handle the physical infrastructure that has been designed.
-    _checkDeployments(pkg);
+    _checkDeployments(package);
 }
 
 
-const loadDeploy = (pkg, prefix, dir) => {
-    pkg.deploy = {
+const loadDeploy = (package, prefix, dir) => {
+    package.deploy = {
         dir: dir, prefix: prefix, envs: {}, build: {}
     };
     // Get the build file
@@ -616,10 +610,10 @@ const loadDeploy = (pkg, prefix, dir) => {
                 normalizedBuild[iname] = image;
             }
             global.ailtire.implementation.images[image.tag] = {
-                image: image, context: iname, pkg: pkg.shortname, basedir: dir, name: image.tag
+                image: image, context: iname, package: package.shortname, basedir: dir, name: image.tag
             };
         }
-        pkg.deploy.build = normalizedBuild;
+        package.deploy.build = normalizedBuild;
     }
 
     // Now get the docker-compose file
@@ -627,9 +621,9 @@ const loadDeploy = (pkg, prefix, dir) => {
     if (isFile(apath)) {
         let deploy = require(dir + '/' + 'deploy.js');
         if (deploy.hasOwnProperty('name')) {
-            pkg.deploy.name = deploy.name;
+            package.deploy.name = deploy.name;
         } else {
-            pkg.deploy.name = pkg.shortname;
+            package.deploy.name = package.shortname;
         }
 
         let contexts = deploy;
@@ -674,14 +668,14 @@ const loadDeploy = (pkg, prefix, dir) => {
                         }
                     }
                 }
-                let stack = AStack.load(pkg.deploy.name, env, design);
+                let stack = AStack.load(package.deploy.name, env, design);
                 stack.composeFile = contexts[env].file;
-                pkg.deploy.envs[env] = {
-                    tag: `${pkg.deploy.name}:${env}`,
+                package.deploy.envs[env] = {
+                    tag: `${package.deploy.name}:${env}`,
                     definition: design,
                     file: contexts[env].file,
                     stack: stack,
-                    pkg: pkg.name.replace(/\s/g, ''),
+                    package: package.name.replace(/\s/g, ''),
                 };
                 if (!global.hasOwnProperty('deploy')) {
                     global.deploy = {envs: {}};
@@ -689,13 +683,13 @@ const loadDeploy = (pkg, prefix, dir) => {
                 if (!global.deploy.envs.hasOwnProperty(env)) {
                     global.deploy.envs[env] = {};
                 }
-                global.deploy.envs[env][pkg.deploy.name] = pkg.deploy.envs[env];
+                global.deploy.envs[env][package.deploy.name] = package.deploy.envs[env];
             } catch(e) {
                 console.error(e.message);
             }
         }
     }
-    return pkg;
+    return package;
 };
 /*
 const normalizeStack = (stack) => {
@@ -738,10 +732,10 @@ const normalizeStack = (stack) => {
 
  */
 
-const loadHandlers = (pkg, prefix, mDir) => {
+const loadHandlers = (package, prefix, mDir) => {
     let handlers = {};
-    if (!pkg.prefix) {
-        pkg.prefix = prefix.toLowerCase();
+    if (!package.prefix) {
+        package.prefix = prefix.toLowerCase();
     }
     let files = getFiles(mDir);
     for (let i in files) {
@@ -763,11 +757,11 @@ const loadHandlers = (pkg, prefix, mDir) => {
 };
 
 // These actions are from the models not the interface.
-const loadActions = (pkg, prefix, mDir) => {
+const loadActions = (package, prefix, mDir) => {
     const Action = require('./Action.js');
     let actions = {};
-    if (!pkg.prefix) {
-        pkg.prefix = prefix.toLowerCase();
+    if (!package.prefix) {
+        package.prefix = prefix.toLowerCase();
     }
     let files = getFiles(mDir);
     for (let i in files) {
@@ -776,7 +770,7 @@ const loadActions = (pkg, prefix, mDir) => {
         let apath = prefix + '/' + aname;
         apath = apath.toLowerCase();
         let details = require(file);
-        let action = Action.create(pkg, apath, details); 
+        let action = Action.create(package, apath, details); 
         actions[apath] = action;
     }
     let dirs = getDirectories(mDir);
@@ -785,7 +779,7 @@ const loadActions = (pkg, prefix, mDir) => {
         if (!reservedDirs.hasOwnProperty(dirname) && dirname[0] != '.') {
             let apath = prefix + '/' + dirname;
             apath = apath.toLowerCase();
-            sactions = loadActions(pkg, apath, dirs[i]);
+            sactions = loadActions(package, apath, dirs[i]);
             for (let aname in sactions) {
                 actions[aname] = sactions[aname];
             }
@@ -825,28 +819,28 @@ const loadClassMethods = (mClass, mDir) => {
 const loadDirectory = (dir, prefix) => {
     let dirs = getDirectories(dir);
     // Get the package definition from the index.js file.
-    let pkg = require(dir + '/index.js');
-    if (pkg.shortname) {
-        prefix += '/' + pkg.shortname;
+    let package = require(dir + '/index.js');
+    if (package.shortname) {
+        prefix += '/' + package.shortname;
     }
-    pkg.prefix = prefix.toLowerCase();
-    pkg.dir = dir;
+    package.prefix = prefix.toLowerCase();
+    package.dir = dir;
     for (let i in dirs) {
         let file = path.basename(dirs[i]);
         if (file[0] !== '.' && file !== 'node_modules') {
             if (reservedDirs.hasOwnProperty(file)) {
-                reservedDirs[file](pkg, prefix, path.join(dir, file));
+                reservedDirs[file](package, prefix, path.join(dir, file));
             } else {
                 let subpackage = loadDirectory(path.join(dir, file), prefix);
-                if (!pkg.hasOwnProperty('subpackages')) {
-                    pkg.subpackages = {};
+                if (!package.hasOwnProperty('subpackages')) {
+                    package.subpackages = {};
                 }
-                pkg.subpackages[subpackage.shortname] = subpackage;
+                package.subpackages[subpackage.shortname] = subpackage;
             }
         }
     }
-    let packageNameNoSpace = pkg.name.replace(/\s/g, '');
-    global.packages[packageNameNoSpace] = new Proxy(pkg, packageProxy);
+    let packageNameNoSpace = package.name.replace(/\s/g, '');
+    global.packages[packageNameNoSpace] = new Proxy(package, packageProxy);
     return global.packages[packageNameNoSpace];
 };
 
@@ -954,7 +948,7 @@ const checkDeployment = (deployments, images) => {
                             if (base) {
                                 if (!global.ailtire.implementation.images.hasOwnProperty(base)) {
                                     global.ailtire.implementation.images[base] = {
-                                        pkg: 'undefined', context: 'external', name: base, children: {}
+                                        package: 'undefined', context: 'external', name: base, children: {}
                                     }
                                 }
                                 global.ailtire.implementation.images[base].children[image.name] = image;
@@ -979,39 +973,39 @@ const checkDeployment = (deployments, images) => {
         }
     }
 }
-const checkPackage = (pkg) => {
+const checkPackage = (package) => {
     // check the package for consistencies
     // Check the Depends
     let depends = [];
-    for (let i in pkg.depends) {
-        let depend = pkg.depends[i].replace(/\s/g, '');
-        let dpkg;
+    for (let i in package.depends) {
+        let depend = package.depends[i].replace(/\s/g, '');
+        let dpackage;
         if (global.packages.hasOwnProperty(depend)) {
-            dpkg = global.packages[depend];
-            depends.push(dpkg);
+            dpackage = global.packages[depend];
+            depends.push(dpackage);
         } else {
             if (!global.ailtire.hasOwnProperty('error')) {
                 global.ailtire.error = [];
             }
             global.ailtire.error.push({
                 type: 'package.depend',
-                object: {type: "Package", id: pkg.id, name: pkg.name},
+                object: {type: "Package", id: package.id, name: package.name},
                 message: "Package in Dependes not found",
                 data: depend,
                 lookup: 'package/list'
             });
-            console.error("Package in Depends not found:", depend, " in ", pkg.name);
+            console.error("Package in Depends not found:", depend, " in ", package.name);
         }
     }
-    pkg.depends = depends;
+    package.depends = depends;
     // associations,
     // attributes.
     // Inheritance relationship check.
-    for (let i in pkg.classes) {
-        let cls = pkg.classes[i];
+    for (let i in package.classes) {
+        let cls = package.classes[i];
         if (cls.definition.extends && typeof cls.definition.extends === 'string') {
             if (global.classes.hasOwnProperty(cls.definition.extends)) {
-                let parentCls = AClass.getClass(cls.definition.extends);
+                let parentCls = AClass.getClass({name:cls.definition.extends});
                 if (!parentCls.definition.hasOwnProperty('subClasses')) {
                     parentCls.definition.subClasses = [];
                 }
@@ -1042,7 +1036,7 @@ const checkPackage = (pkg) => {
                         }
                     }
                     if (parentCls.definition.extends) {
-                        parentCls = AClass.getClass(parentCls.definition.extends);
+                        parentCls = AClass.getClass({name:parentCls.definition.extends});
                     } else {
                         parentCls = null;
                     }
@@ -1068,9 +1062,9 @@ const checkPackage = (pkg) => {
     }
 
     // UseCase checker
-    for (let i in pkg.usecases) {
-        let usecase = pkg.usecases[i];
-        checkUseCase(pkg, usecase);
+    for (let i in package.usecases) {
+        let usecase = package.usecases[i];
+        checkUseCase(package, usecase);
     }
     // Event Emitter Checker.
     // Add an event to the package and to each class for the following
@@ -1080,8 +1074,8 @@ const checkPackage = (pkg) => {
     // model.destroy
     // model.updated
 
-    for (let i in pkg.classes) {
-        let cls = pkg.classes[i];
+    for (let i in package.classes) {
+        let cls = package.classes[i];
         let ename = cls.definition.name.toLowerCase();
         let events = {
             'create': {
@@ -1113,24 +1107,24 @@ const checkPackage = (pkg) => {
             if (!global.events.hasOwnProperty(exname)) {
                 global.events[exname] = events[evname];
             }
-            if (!pkg.events) {
+            if (!package.events) {
 
-                pkg.events = {};
+                package.events = {};
             }
-            pkg.events[exname] = global.events[exname];
+            package.events[exname] = global.events[exname];
 
         }
     }
     // Handler Checker
     // Create a new member that has the events that are emited from the Package.
     // Create a global struture to store the events.
-    for (let i in pkg.handlers) {
-        let handler = pkg.handlers[i];
-        AHandler.checker(pkg, handler);
+    for (let i in package.handlers) {
+        let handler = package.handlers[i];
+        AHandler.checker(package, handler);
     }
     //
 };
-const checkUseCase = (pkg, usecase) => {
+const checkUseCase = (package, usecase) => {
     // Make sure that there is an actor for the actors in a use case.
     for (let aname in usecase.actors) {
         let nsAname = aname.replace(/\s/g, '');
@@ -1150,9 +1144,9 @@ const checkUseCase = (pkg, usecase) => {
     // Relative path does not start with /
     // Convert it to an absolute path first.
     if (actionName[0] !== '/') {
-        actionName = pkg.prefix + '/' + actionName;
+        actionName = package.prefix + '/' + actionName;
     } else {
-        let pkgs = pkg.prefix.split('/');
+        let pkgs = package.prefix.split('/');
         let actions = actionName.split('/');
         let nactionpath = [];
         let i = 1;
@@ -1172,7 +1166,7 @@ const checkUseCase = (pkg, usecase) => {
         actionName = '/' + nactionpath.join('/');
     }
     actionName = actionName.toLowerCase();
-    if (!actionName.includes(pkg.shortname.toLowerCase())) {
+    if (!actionName.includes(package.shortname.toLowerCase())) {
         // console.warn("Method is not part of the intreface!", actionName);
         if (!global.ailtire.hasOwnProperty('error')) {
             global.ailtire.error = [];
@@ -1188,15 +1182,15 @@ const checkUseCase = (pkg, usecase) => {
         /*if (!global.actions.hasOwnProperty(actionName)) {
             console.warn("Action does not exist creating:", actionName, usecase.method);
             let aname = actionName.split(/\//).pop();
-            let pathName = actionName.replace(pkg.prefix.toLowerCase(), '');
-            apiGenerator.action({name: aname, path: pathName}, pkg.interfaceDir);
+            let pathName = actionName.replace(package.prefix.toLowerCase(), '');
+            apiGenerator.action({name: aname, path: pathName}, package.interfaceDir);
         }
 
          */
     }
     for (let i in usecase.scenarios) {
         let scenario = usecase.scenarios[i];
-        checkScenario(pkg, scenario);
+        checkScenario(package, scenario);
     }
     // Extends is used primarily for aggregation. Sub use cases of a super use case.
     let newExtends = {};
@@ -1243,7 +1237,7 @@ const checkUseCase = (pkg, usecase) => {
             }
             global.ailtire.error.push({
                 type: 'usecase.includes',
-                object: {type: "Package", id: pkg.id, name: pkg.name},
+                object: {type: "Package", id: package.id, name: package.name},
                 message: "Usecase includes use case not found.",
                 data: pusecaseName,
                 lookup: 'usecase/list'
@@ -1254,7 +1248,7 @@ const checkUseCase = (pkg, usecase) => {
     // This is causing a circular dependency in the memory tree.
     // usecase.includes = newIncludes;
 };
-const checkScenario = (pkg, scenario) => {
+const checkScenario = (package, scenario) => {
     // Make sure that there is an actor for the actors in a use case.
     for (let aname in scenario.actors) {
         let nsAname = aname.replace(/\s/g, '');
@@ -1275,9 +1269,9 @@ const checkScenario = (pkg, scenario) => {
     // Relative path does not start with /
     // Convert it to an absolute path first.
     if (actionName[0] !== '/') {
-        actionName = pkg.prefix + '/' + actionName;
+        actionName = package.prefix + '/' + actionName;
     } else {
-        let pkgs = pkg.prefix.split('/');
+        let pkgs = package.prefix.split('/');
         let actions = actionName.split('/');
         let nactionpath = [];
         let i = 1;
@@ -1297,7 +1291,7 @@ const checkScenario = (pkg, scenario) => {
         actionName = '/' + nactionpath.join('/');
     }
     actionName = actionName.toLowerCase();
-    if (!actionName.includes(pkg.shortname.toLowerCase())) {
+    if (!actionName.includes(package.shortname.toLowerCase())) {
         if (!global.ailtire.hasOwnProperty('error')) {
             global.ailtire.error = [];
         }
@@ -1313,8 +1307,8 @@ const checkScenario = (pkg, scenario) => {
         if (!global.actions.hasOwnProperty(actionName)) {
             console.warn("Action does not exist creating:", actionName, scenario.method);
             let aname = actionName.split(/\//).pop();
-            let pathName = actionName.replace(pkg.prefix.toLowerCase(), '');
-            apiGenerator.action({name: aname, path: pathName}, pkg.interfaceDir);
+            let pathName = actionName.replace(package.prefix.toLowerCase(), '');
+            apiGenerator.action({name: aname, path: pathName}, package.interfaceDir);
         }
     }
 };
@@ -1326,7 +1320,7 @@ const checkScenario = (pkg, scenario) => {
 //      'BluePrint',
 //  ]
 // }
-const processModelIncludefile = (pkg, dir) => {
+const processModelIncludefile = (package, dir) => {
     // First check if there is an includes.js file.
     // If there is then process the includes.js file to import the classes into the global namespace.
     if (fs.existsSync(dir + '/include.js')) {
@@ -1335,7 +1329,7 @@ const processModelIncludefile = (pkg, dir) => {
         for (let i in include.models) {
             let model = include.models[i];
             if (global.classes.hasOwnProperty(model)) {
-                pkg.includes[model] = global.classes[model];
+                package.includes[model] = global.classes[model];
             } else {
                 // let apath = path.resolve(file);
                 if (!global.ailtire.hasOwnProperty('error')) {
@@ -1343,7 +1337,7 @@ const processModelIncludefile = (pkg, dir) => {
                 }
                 global.ailtire.error.push({
                     type: 'package.includesFile',
-                    object: {type: "Package", id: pkg, name: pkg.name},
+                    object: {type: "Package", id: package, name: package.name},
                     message: "Model not found in package includes.js file",
                     data: model,
                     lookup: 'model/list'
@@ -1362,8 +1356,8 @@ function _loadWorkflowInstances() {
 function _processModelIncludeFiles() {
 
     for (let pname in global.packages) {
-        let pkg = global.packages[pname];
-        processModelIncludefile(pkg, path.resolve(`${pkg.dir}/models`));
+        let package = global.packages[pname];
+        processModelIncludefile(package, path.resolve(`${package.dir}/models`));
     }
 }
 

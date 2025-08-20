@@ -347,16 +347,16 @@ export default class AScenario {
             }
             data.links.push({source: uid, target: action.name, value: 0.1});
             // Add the package for the action.
-            let pkg = action.pkg;
-            if (pkg) {
-                if (!data.nodes.hasOwnProperty(pkg.shortname)) {
-                    data.nodes[pkg.shortname] = {
-                        id: pkg.shortname,
-                        name: pkg.name,
-                        color: pkg.color,
+            let package = action.package;
+            if (package) {
+                if (!data.nodes.hasOwnProperty(package.shortname)) {
+                    data.nodes[package.shortname] = {
+                        id: package.shortname,
+                        name: package.name,
+                        color: package.color,
                         view: APackage.view3D,
                         expandView: APackage.handle,
-                        expandLink: `package/get?id=${pkg.shortname}`,
+                        expandLink: `package/get?id=${package.shortname}`,
                         rbox: {
                             parent: scenario.id,
                             x: {min: -300, max: 300},
@@ -366,7 +366,7 @@ export default class AScenario {
                     };
                 }
                 if (!action.cls) {
-                    data.links.push({source: action.name, target: pkg.shortname, value: 0.1});
+                    data.links.push({source: action.name, target: package.shortname, value: 0.1});
                 }
             }
             // Add the class if it is a class action.
@@ -384,7 +384,7 @@ export default class AScenario {
                             fz: -300,
                         }
                     };
-                    data.links.push({source: cls, target: pkg.shortname, value: 0.1});
+                    data.links.push({source: cls, target: package.shortname, value: 0.1});
                 }
                 data.links.push({target: cls, source: action.name, value: 0.1});
             }

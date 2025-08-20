@@ -5,7 +5,10 @@ class AOpenAI extends AIAdaptor {
     constructor(config) {
         super();
         if (!config.apiKey) {
-            throw new Error("API key is required to use OpenAI.");
+            config.apiKey = process.env.OPENAI_KEY;
+            if( !config.apiKey) {
+                throw new Error("API key is required to use OpenAI.");
+            }
         }
         this.apiKey = config.apiKey;
         this.client = null;

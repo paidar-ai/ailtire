@@ -12,7 +12,7 @@ end box
 
 <% for (let pname in pkgs) {
 let pkgtop = pkgs[pname];
-let pkg1 = pkgtop.pkg;
+let pkg1 = pkgtop.package;
 %>
 box <%= pkg1.name %> #<%= pkg1.color.replace(/\#/g,'') %>
     <% for (let model in pkgtop.models) { -%>

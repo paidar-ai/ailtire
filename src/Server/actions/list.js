@@ -16,7 +16,7 @@ module.exports = {
         // let apath = path.resolve(__dirname + '/../../views/model/list.ejs');
         // let str = fs.readFileSync(apath, 'utf8');
         let objs = [];
-        let cls = AClass.getClass(modelName);
+        let cls = AClass.getClass({name:modelName});
         if (global._instances) {
             objs = AClass.getInstances(modelName);
         }
@@ -39,7 +39,7 @@ module.exports = {
         }
         for (let aname in cls.definition.associations) {
             let assoc = cls.definition.associations[aname];
-            let acls = AClass.getClass(assoc.type);
+            let acls = AClass.getClass({name:assoc.type});
             if(acls) {
                 cols[aname] = {
                     name: aname.charAt(0).toUpperCase() + aname.slice(1),

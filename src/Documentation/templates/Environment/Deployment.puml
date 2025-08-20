@@ -49,13 +49,13 @@ node "<%= stack.name %>" as <%= stack.id %> #<%= stack.color.replace(/\#/, '')  
 // Main Stack for the diagram
 %>
 
-node "<%= pkg.deploy.name %>" #<%= pkg.color.replace(/\#/,''); %> {
+node "<%= package.deploy.name %>" #<%= package.color.replace(/\#/,''); %> {
 <%
 // Handle the deploy ports
 if(Object.keys(deploy.ports).length > 0) {
     for(let port in deploy.ports) { %>
-    portin "<%= port %>" as <%= pkg.deploy.name %>Port<%= port %> <%= egressColor %>
-    <%= pkg.deploy.name %>Port<%= port %> -- external
+    portin "<%= port %>" as <%= package.deploy.name %>Port<%= port %> <%= egressColor %>
+    <%= package.deploy.name %>Port<%= port %> -- external
 <% }
 }
 %>

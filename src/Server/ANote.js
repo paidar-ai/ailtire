@@ -74,7 +74,7 @@ class ANote {
             state: "Suggested",
             json: json
         };
-        AEvent.emit(`noteItem.created`, {message: `Created ${type}`, note: this.id, item: newItem});
+        AEvent.emit({event:`noteItem.created`, data: {message: `Created ${type}`, note: this.id, data: item: newItem} });
         this.items.push(newItem);
         this.save();
     }
@@ -89,7 +89,7 @@ class ANote {
             if (id == item.id) {
                 item.state = "Accepted";
                 this.save();
-                AEvent.emit("noteItem.accepted", {note: this.id, item: item.id});
+                AEvent.emit({event:"noteItem.accepted", {note: this.id, data: item: item.id} });
                 this.generateItem(item);
             }
         }
@@ -101,7 +101,7 @@ class ANote {
             if (id == item.id) {
                 item.state = "Rejected";
                 this.save();
-                AEvent.emit("noteItem.rejected", {note: this.id, item: item.id});
+                AEvent.emit({event:"noteItem.rejected", {note: this.id, data: item: item.id} });
             }
         }
     }
@@ -145,7 +145,7 @@ class ANote {
             }
             item.state = "Generated";
             this.save();
-            AEvent.emit("noteItem.generated", {note: this.id, item: item.id});
+            AEvent.emit({event:"noteItem.generated", {note: this.id, data: item: item.id} });
         } catch (e) {
             console.error(e);
         }
@@ -169,7 +169,7 @@ class ANote {
 
         // Check for any Markdown pattern in the text
         if (!markdownPatterns.some(pattern => pattern.test(this.text))) {
-            AEvent.emit("note.normalize.started", {note: this.id});
+            AEvent.emit({event:"note.normalize.started", data: {note: this.id} });
             let results = await AIHelper.ask([{
                 role: 'system',
                 content: 'Create a md table with the following columns | Time | Speaker | Text |. The time should be in mm:ss format.'
@@ -177,7 +177,7 @@ class ANote {
                 {role: 'user', content: this.text}
             ]);
             this.text = "## Transcript\n\n" + results;
-            AEvent.emit("note.normalize.completed", {note: this.id});
+            AEvent.emit({event:"note.normalize.completed", data: {note: this.id} });
         }
     }
 }

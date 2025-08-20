@@ -1,6 +1,5 @@
 const path = require('path');
 const spawn = require('child_process').spawnSync;
-const server = require('../../src/Server/doc-md');
 
 module.exports = {
     friendlyName: 'docs',
@@ -17,6 +16,7 @@ module.exports = {
     },
 
     fn: function (inputs, env) {
+        const server = require('../../src/Server/doc-md');
 
         let host = process.env.AITIRE_HOST || 'localhost'
         let port = process.env.AITIRE_PORT || 80

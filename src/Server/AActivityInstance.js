@@ -40,7 +40,7 @@ class AActivityInstance {
             if (opts.previous) {
                 this.previous = [{id: opts.previous.id, name: opts.previous.name}];
             }
-            AEvent.emit("activity.created", {obj: this.toJSON()});
+            AEvent.emit({event:"activity.created", data: {obj: this.toJSON()} });
             _activityInstances[opts.name][iid] = this;
             opts.parent.registerActivity(this);
 
@@ -112,7 +112,7 @@ class AActivityInstance {
         this.state = "skipped";
         this.finishedTime = new Date();
         this.save();
-        AEvent.emit("activity.skipped", {obj: this.toJSON()});
+        AEvent.emit({event:"activity.skipped", data: {obj: this.toJSON()} });
         return this;
     }
 
@@ -133,7 +133,7 @@ class AActivityInstance {
         }
         this.variables = variables;
         this.save();
-        AEvent.emit("activity.inprogress", {obj: this.toJSON()});
+        AEvent.emit({event:"activity.inprogress", data: {obj: this.toJSON()} });
     }
 
     complete() {
@@ -141,7 +141,7 @@ class AActivityInstance {
         this.state = "completed";
         this.finishedTime = new Date();
         this.save();
-        AEvent.emit("activity.completed", {obj: this.toJSON()});
+        AEvent.emit({event:"activity.completed", data: {obj: this.toJSON()} });
         return this;
     }
 
@@ -151,7 +151,7 @@ class AActivityInstance {
         this.message = "Error Running Activity:" + message;
         this.finishedTime = new Date();
         this.save();
-        AEvent.emit("activity.error", {obj: this.toJSON(), message: "Error Running Activity: " + message})
+        AEvent.emit({event:"activity.error", data: {obj: this.toJSON(), message: "Error Running Activity: " + message}});
         return this;
     }
 
@@ -160,7 +160,7 @@ class AActivityInstance {
         this.state = "blocked";
         this.blockedTime = new Date();
         this.save();
-        AEvent.emit("activity.blocked", {obj: this.toJSON()});
+        AEvent.emit({event:"activity.blocked", data: {obj: this.toJSON()} });
     }
 
     execute(args) {

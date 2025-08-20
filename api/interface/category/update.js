@@ -1,0 +1,26 @@
+module.exports = {
+    friendlyName: 'update',
+    description: 'Update the Workflow',
+    inputs: {
+        id: {
+            description: 'The name of the workflow',
+            type: 'string',
+            required: true
+        }
+    },
+
+    fn: function (inputs, env) {
+        try {
+            let workflow = AWorkflow.get(inputs.id);
+            let package = APackage.getPackage(workflow.package);
+            for(let fname in inputs) {
+                workflow[fname] = inputs[fname];
+            }
+            AWorkflow.save(workflow,package);
+        }
+        catch(e) {
+            console.error(e);
+            env.res.json({error:`Package not found ${inputs.id}`});
+        }
+    }
+};

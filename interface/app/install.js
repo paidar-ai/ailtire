@@ -1,8 +1,6 @@
 const path = require('path');
 const spawn = require('child_process').spawnSync;
-const sLoader = require('../../src/Server/Loader');
 const fs = require('fs');
-const Build = require('../../src/Services/BuildEngine');
 
 module.exports = {
     friendlyName: 'install',
@@ -40,6 +38,9 @@ module.exports = {
         // Iterate down to the Packages the same thing.
         // continue down the tree.
         // Make sure to call docker stack deploy first then go down.
+        const Build = require('../../src/Services/BuildEngine');
+        const sLoader = require('../../src/Server/Loader');
+
         let name = inputs.name || "default";
         let environ = inputs.env || 'local';
         let repo = inputs.repo || '';

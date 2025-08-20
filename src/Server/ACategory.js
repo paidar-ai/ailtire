@@ -137,12 +137,12 @@ module.exports = {
                     let workflow = workflows[i];
                     workflow.category = workflow.category || category.prefix;
                     AWorkflow.save(workflow, package);
-                    AEvent.emit('workflow.created', {obj:workflow});
+                    AEvent.emit({event:'workflow.created', data: {obj:workflow} });
                 }
             } else {
                 workflow.category = workflow.category || category.prefix;
                 AWorkflow.save(workflows, package);
-                AEvent.emit('workflow.created', {obj:workflow});
+                AEvent.emit({event:'workflow.created', data: {obj:workflow} });
             }
             return {category: category, changes: workflows};
         } catch (e) {
@@ -251,10 +251,10 @@ function _toJSON(obj) {
     return retval;
 }
 
-function _getDocumentation(pkg) {
+function _getDocumentation(package) {
     let retval = "";
-    if (pkg) {
-        let bdir = pkg.baseDir || pkg.dir;
+    if (package) {
+        let bdir = package.baseDir || package.dir;
         bdir += '/doc';
         bdir = bdir.replace(/\s/g, '');
         let files = fs.readdirSync(bdir);

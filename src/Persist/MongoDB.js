@@ -64,7 +64,7 @@ async function _loadClass(className) {
     const collection = db.collection(className);
     const objects = await collection.find({}).toArray();
     objects.forEach(doc => {
-        const cls = AClass.getClass(doc._clsName); // Assuming AClass handles class retrieval
+        const cls = AClass.getClass({name:doc._clsName}); // Assuming AClass handles class retrieval
         const loadedObj = new cls({_loading: true, id: doc.id});
         _loadAttributes(loadedObj, doc);
         _loadAssociations(loadedObj, doc);
@@ -111,7 +111,7 @@ function _loadAssociations(obj, doc) {
 }
 
 function _getAssociation(obj) {
-    let cls= AClass.getClass(obj._clsName);
+    let cls= AClass.getClass({name:obj._clsName});
     let id = obj.id || obj._aid;
     let assoc = cls.find(id);
     if(!assoc) {
@@ -127,7 +127,7 @@ async function _load(obj) {
     const doc = await collection.findOne({_id: new ObjectId(obj._persist._id)}); // Use ObjectId
     if (!doc) return null; // Handle case where object not found
 
-    const cls = AClass.getClass(doc._clsName);
+    const cls = AClass.getClass({name:doc._clsName});
     const loadedObj = new cls({_loading: true, id:doc.id});
     _loadAttributes(loadedObj, doc);
     _loadAssociations(loadedObj, doc);

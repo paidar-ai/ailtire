@@ -7,20 +7,20 @@ module.exports = {
     },
 
     fn: function (inputs, env) {
-        let jpkg = processPackage(global.topPackage);
-        env.res.json(jpkg);
+        let jpackage = processPackage(global.topPackage);
+        env.res.json(jpackage);
     }
 };
-function processPackage(pkg) {
-    let jpkg = {
-        name: pkg.name,
-        shortname: pkg.shortname,
-        description: pkg.description,
-        color: pkg.color,
-        prefix: pkg.prefix,
-        listenPort: pkg.listenPort,
-        deploy: pkg.pkg,
-        doc: pkg.doc,
+function processPackage(package) {
+    let jpackage = {
+        name: package.name,
+        shortname: package.shortname,
+        description: package.description,
+        color: package.color,
+        prefix: package.prefix,
+        listenPort: package.listenPort,
+        deploy: package.package,
+        doc: package.doc,
         interface: {},
         classes: {},
         usecases: {},
@@ -28,38 +28,38 @@ function processPackage(pkg) {
         handlers: {}
     }
 
-    for(let iname in pkg.interface) {
-        let intrface = pkg.interface[iname];
-        jpkg.interface[iname] = {
+    for(let iname in package.interface) {
+        let intrface = package.interface[iname];
+        jpackage.interface[iname] = {
             friendlyName: intrface.friendlyName,
             description: intrface.description,
             inputs: intrface.inputs,
             static: intrface.static
         };
     }
-    for(let hname in pkg.handlers) {
-        let handler = pkg.handlers[hname];
-        jpkg.interface[hname] = {
+    for(let hname in package.handlers) {
+        let handler = package.handlers[hname];
+        jpackage.interface[hname] = {
             friendlyName: handler.friendlyName,
             description: handler.description,
         };
     }
 
-    for(let cname in pkg.classes) {
-        let cls = pkg.classes[cname].definition;
-        jpkg.classes[cname] = { name: cls.name, description: cls.description, methods: cls.methods, attributes: cls.attributes, associations: cls.associations };
+    for(let cname in package.classes) {
+        let cls = package.classes[cname].definition;
+        jpackage.classes[cname] = { name: cls.name, description: cls.description, methods: cls.methods, attributes: cls.attributes, associations: cls.associations };
     }
-    for(let uname in pkg.usecases) {
-        jpkg.usecases[uname] = pkg.usecases[uname];
+    for(let uname in package.usecases) {
+        jpackage.usecases[uname] = package.usecases[uname];
     }
-    for(let spkg in pkg.subpackages) {
-        jpkg.subpackages[spkg] = processPackage(pkg.subpackages[spkg]);
+    for(let spackage in package.subpackages) {
+        jpackage.subpackages[spkg] = processPackage(package.subpackages[spkg]);
     }
     // Only push the shortname of the depends to prevent circular references.
-    jpkg.depends = [];
-    for(let dname in pkg.definition.depends) {
-        let dpnd = pkg.definition.depends[dname];
-        jpkg.depends.push(dpnd.shortname);
+    jpackage.depends = [];
+    for(let dname in package.definition.depends) {
+        let dpnd = package.definition.depends[dname];
+        jpackage.depends.push(dpnd.shortname);
     }
-    return jpkg;
+    return jpackage;
 }

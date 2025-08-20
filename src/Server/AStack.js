@@ -74,7 +74,7 @@ class AStack {
             env: process.env
         });
         if (proc.status != 0) {
-            console.error("Error Building Service Container", pkg.deploy.name);
+            console.error("Error Building Service Container", package.deploy.name);
             console.error(proc.stdout.toString('utf-8'));
             console.error(proc.stderr.toString('utf-8'));
         }
@@ -97,7 +97,7 @@ class AStack {
                 './.router.js': {template: '/templates/Package/deploy/router.ejs'},
             }
         };
-        Generator.process(files, pkg.deploy.dir);
+        Generator.process(files, package.deploy.dir);
         if (!this.composefile) {
             composeFile = './.tmp-stack-compose.yml';
         }

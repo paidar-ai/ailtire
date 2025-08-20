@@ -10,7 +10,7 @@ module.exports = {
     launch: async (scenario, args) => {
         const AEvent = require('../../src/Server/AEvent');
         let jsonScenario = _toJSON(scenario);
-        AEvent.emit("scenario.started", {obj:jsonScenario});
+        AEvent.emit({event:"scenario.started", data: {obj:jsonScenario} });
         if(!_scenarioInstances.hasOwnProperty(scenario.id)) {
             _scenarioInstances[scenario.id] = [];
         }
@@ -28,7 +28,7 @@ module.exports = {
             results = await _launchStepService(scenario,args, step);
         }
         myInstance.state = 'completed';
-        AEvent.emit("scenario.completed", {obj:jsonScenario});
+        AEvent.emit({event:"scenario.completed", data: {obj:jsonScenario} });
         return results;
     },
     instances: () => {
@@ -60,8 +60,8 @@ function _toJSON(scenario) {
                 retaction = {
                     name: step.action,
                     cls: action.cls,
-                    pkg: {shortname: action.pkg.shortname, name: action.pkg.name, color: action.pkg.color},
-                    obj: {obj: action.pkg.obj}
+                    package: {shortname: action.package.shortname, name: action.package.name, color: action.package.color},
+                    obj: {obj: action.package.obj}
                 };
             }
             rstep.action = retaction;
@@ -75,7 +75,7 @@ function _toJSON(scenario) {
 }
 async function _launchStepBinary(scenario, args, step) {
     const AEvent = require('../../src/Server/AEvent');
-    AEvent.emit("step.started", {obj:scenario});
+    AEvent.emit({event:"step.started", data: {obj:scenario} });
     let params = [];
     let parameters = _resolveParameters(step.parameters, args);
     for(let j in parameters) {
@@ -93,10 +93,10 @@ async function _launchStepBinary(scenario, args, step) {
             console.error("Step Failed: ", command);
             console.error(results.stderr);
             stepInstance.state = 'failed';
-            AEvent.emit("step.failed", {obj:scenario});
+            AEvent.emit({event:"step.failed", data: {obj:scenario} });
         } else {
             stepInstance.state = 'completed';
-            AEvent.emit("step.completed", {obj:scenario});
+            AEvent.emit({event:"step.completed", data: {obj:scenario} });
         }
     }
     catch (e) {
@@ -104,7 +104,7 @@ async function _launchStepBinary(scenario, args, step) {
         scenario.error = e;
         stepInstance.stdio = e;
         stepInstance.state = 'failed';
-        AEvent.emit("step.failed", {obj:scenario});
+        AEvent.emit({event:"step.failed", data: {obj:scenario} });
         console.error("Scenario Failed:",e);
         throw e;
     }
@@ -113,15 +113,15 @@ async function _launchStepBinary(scenario, args, step) {
 async function _launchStepService(scenario, args, step) {
 
     const AEvent = require('../../src/Server/AEvent');
-    AEvent.emit("step.started", {obj:scenario});
+    AEvent.emit({event:"step.started", data: {obj:scenario} });
     let parameters = _resolveParameters(step.parameters, args);
     try {
         let results = await AService.call(step.action.replace(/\s/g, '/').replace(/\./g,'/'), parameters);
-        AEvent.emit('step.completed', {obj:scenario})
+        AEvent.emit({event:'step.completed', data: {obj:scenario})
         return results;
     } catch (e) {
         console.error("Error launching service:", step, e);
-        AEvent.emit('step.failed', {obj:scenario, error: e});
+        AEvent.emit({event:'step.failed', {obj:scenario, data: error: e} });
     }
 }
 

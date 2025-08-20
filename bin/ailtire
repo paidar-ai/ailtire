@@ -1,5 +1,26 @@
 #!/usr/bin/env node
-
+const path = require('path');
+const AOpenAI = require('../src/AI/AOpenAI');
+const BootStrap = require('../src/BootStrap');
 const program = require('../src/Command/subcommander');
 
+global.ailtire = {
+    baseDir: process.cwd(),
+    ai: {
+        adaptor: AOpenAI,
+        model: 'gpt-4o-mini',
+        apiKey: process.env.AILTIRE_OPENAI_KEY,
+    }
+};
+let ailtireBaseDir = path.resolve(__dirname, '..');
+BootStrap.init(ailtireBaseDir);
+console.log(global.ailtire.baseDir);
+console.log(ailtireBaseDir);
+// If the working directory is the same as the ailtire then do not load the application.
+if(ailtireBaseDir !== global.ailtire.baseDir) {
+    AApplication.load({dir: global.ailtire.baseDir});
+} else {
+    console.log("Skipping loading");
+}
 program.execute(__dirname);
+

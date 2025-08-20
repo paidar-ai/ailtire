@@ -15,16 +15,16 @@ function processDeployment(packages) {
     let retval = {environments:{}, images:{}};
 
     for(let pname in packages) {
-        let pkg = packages[pname];
-        for(let ename in pkg.deploy.envs) {
-            let env = pkg.deploy.envs[ename];
+        let package = packages[pname];
+        for(let ename in package.deploy.envs) {
+            let env = package.deploy.envs[ename];
             if(!retval.environments.hasOwnProperty(ename)) {
                 retval.environments[ename] = { stacks: {}};
             }
             retval.environments[ename].stacks[env.tag] = processStack(`${ename}.${pname}.${ename}`, env.definition);
         }
-        for(let bname in pkg.deploy.build) {
-            let bld = pkg.deploy.build[bname];
+        for(let bname in package.deploy.build) {
+            let bld = package.deploy.build[bname];
             retval.images[bld.tag] = bld;
         }
     }

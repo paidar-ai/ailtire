@@ -1,0 +1,82 @@
+---
+title: <%= usecase.name %>
+permalink: usecase-<%= usecase.name.replace(/\s/g, '') %>
+parent: UseCases
+---
+# <%= usecase.name %>
+
+<%= usecase.description %>
+
+![Activities Diagram](./Activities.png)
+
+## Actors
+
+<% for(let aname in usecase.actors) {
+    aname = aname.replace(/\s/g,'');
+    let actor = actors[aname];
+-%>
+* [<%= actor.name %>](actor-<%= actor.shortname %>)
+<% } %>
+
+<% if(usecase.extended) {
+%>
+## Extended Use Cases
+
+<% for(let ucname in usecase.extended) {
+-%>
+* [<%= ucname %>](usecase-<%= ucname %>)
+<% }
+} %>
+
+<% if(usecase.extends) {
+  %>
+## Extends Use Cases
+
+<% for(let i in usecase.extends) {
+let ucname = usecase.extends[i];
+-%>
+* [<%= ucname %>](usecase-<%= ucname.replace(/\s/g,'') %>)
+<% }
+} %>
+
+
+<% if(usecase.included) {
+%>
+## Included Use Cases
+
+<% for(let i in usecase.included) {
+let ucname = usecase.included[i];
+-%>
+* [<%= ucname %>](usecase-<%= ucname %>)
+<% }
+} %>
+
+<% if(usecase.includes) {
+%>
+## Includes Use Cases
+
+<% for(let i in usecase.includes) {
+let ucname = usecase.includes[i];
+-%>
+* [<%= ucname %>](usecase-<%= ucname %>)
+  <% }
+  } %>
+
+## Detail Scenarios
+
+<% for(let sname in usecase.scenarios) {
+let nameNoSpaces = sname.replace(/\s/g, '-');
+let ucName = usecase.name.replace(/\s/g,'');
+let prefix = usecase.prefix;
+-%>
+* [<%= sname %>](#scenario-<%- nameNoSpaces %>)
+<% } %>
+
+<% for(let sname in usecase.scenarios) {
+let nameNoSpaces = sname.replace(/ /g, '');
+let scenario = usecase.scenarios[sname];
+let pkgPath = global.packages[usecase.package.replace(/ /g, '')].prefix;
+-%>
+<%- partial('templates/Scenario/_index.emd', {scenario:scenario, pageDir: pageDir}) %>
+<% } %>
+

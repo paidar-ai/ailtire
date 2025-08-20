@@ -78,8 +78,8 @@ module.exports = {
             name = name.replace(config.urlPrefix,'');
             console.log("Calling Action Name:", name);
             let action = Action.find(name);
-            let pkg = action.pkg
-            let apath = `${config.urlPrefix}${pkg.prefix}/index.html#Action-${name.replace(/\//g,'-')}`;
+            let package = action.pkg
+            let apath = `${config.urlPrefix}${package.prefix}/index.html#Action-${name.replace(/\//g,'-')}`;
             res.redirect(apath);
             // res.sendFile('index.html', {root: apath});
         });

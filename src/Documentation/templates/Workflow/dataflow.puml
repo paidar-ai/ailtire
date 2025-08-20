@@ -15,8 +15,8 @@ for(let aname in workflow.activities) {
         pname = activity.package;
         pnospace = activity.package.replace(/\s/g, '');
         if(global.packages.hasOwnProperty(pnospace)) {
-           let pkg = global.packages[pnospace];
-           pcolor = pkg.color;
+           let package = global.packages[pnospace];
+           pcolor = package.color;
         }
     }
 %>

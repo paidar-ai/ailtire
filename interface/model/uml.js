@@ -1,5 +1,3 @@
-const generator = require('../../src/Documentation/puml');
-const AClass = require("../../src/Server/AClass");
 
 module.exports = {
     friendlyName: 'uml',
@@ -13,11 +11,12 @@ module.exports = {
     },
 
     fn: async function (inputs, env) {
+        const generator = require('../../src/Documentation/puml');
         try {
             // Generate the plantuml diagram
             // Or get it from the doc directory.
 
-            let cls = AClass.getClass(inputs.id);
+            let cls = AClass.getClass({name:inputs.id});
             let results = await generator.model(cls, inputs.diagram);
             
             env.res.json(results);

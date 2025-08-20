@@ -1,8 +1,3 @@
-const path = require('path');
-const exec = require('child_process').spawnSync;
-const api = require('../../src/Documentation/api');
-const sLoader = require('../../src/Server/Loader');
-const fs = require('fs');
 
 module.exports = {
     friendlyName: 'create',
@@ -30,6 +25,12 @@ module.exports = {
     },
 
     fn: function (inputs, env) {
+        const path = require('path');
+        const exec = require('child_process').spawnSync;
+        const api = require('../../src/Documentation/api');
+        const sLoader = require('../../src/Server/Loader');
+        const fs = require('fs');
+
         // goto the deploy directory at the top level.
         // Call docker stack deploy -c docker-compose.yml
         // Iterate down to the Packages the same thing.

@@ -8,9 +8,9 @@ module.exports = {
     // servers: [ {url:localhost:3000, pattern: }, ...]
     //
     addServers: (servers) => {
-        for(let i in servers) {
+        for (let i in servers) {
             let server = servers[i];
-            for(let j in global.ailtire.comms.services) {
+            for (let j in global.ailtire.comms.services) {
                 let commsService = global.ailtire.comms.services[j];
                 commsService.connect(server);
             }
@@ -19,7 +19,7 @@ module.exports = {
     addHandlers: async (adaptor) => {
         for (let event in global.handlers) {
             // Make sure the handlers are only installed once. per socket.
-            if(!global.handlers[event].hasOwnProperty('adaptors')) {
+            if (!global.handlers[event].hasOwnProperty('adaptors')) {
                 global.handlers[event].adaptors = {};
             }
             if (!global.handlers[event].adaptors[adaptor.id]) {
@@ -30,35 +30,38 @@ module.exports = {
     },
     emit: (event, data) => {
         // TODO: Could check if the event has the right signature in the data
-        try {
-            const nevent = event.toLowerCase();
-            // console.log("Event:", nevent);
-            // send the event to all clients.
-            let sdata = data.toJSON;
-            if (!sdata) {
-                if (data.hasOwnProperty('obj')) {
-                    sdata = data.obj.toJSON;
-                }
-            }
-            sdata = sdata || data;
+        if(event) {
             try {
-                sdata = _toJSON(sdata);
-            } catch(e) {
-                console.error("Problem converting event message to JSON", e);
+                const nevent = event.toLowerCase();
+                // console.log("Event:", nevent);
+                // send the event to all clients.
+                let sdata = data.toJSON;
+                if (!sdata) {
+                    if (data.hasOwnProperty('obj')) {
+                        sdata = data.obj.toJSON;
+                    }
+                }
+                sdata = sdata || data;
+                try {
+                    sdata = _toJSON(sdata);
+                } catch (e) {
+                    console.error("Problem converting event message to JSON", e);
+                }
+                if (global.ailtire?.comms?.services) {
+                    for (let i in global.ailtire.comms?.services) {
+                        let commsService = global.ailtire.comms.services[i];
+                        commsService.publish(nevent, sdata);
+                    }
+                }
+                // Check to see if the current server handles this event.
+                // If it does then call the Call the handlers defined.
+                // This allows for a server to have events handled.
+                if (global.handlers?.hasOwnProperty(nevent)) {
+                    callActions(nevent, data);
+                }
+            } catch (e) {
+                console.log("Error on Event Emit:", e);
             }
-            for(let i in global.ailtire.comms.services) {
-                let commsService = global.ailtire.comms.services[i];
-                commsService.publish(nevent, sdata);
-            }
-            // Check to see if the current server handles this event.
-            // If it does then call the Call the handlers defined.
-            // This allows for a server to have events handled.
-            if (global.handlers.hasOwnProperty(nevent)) {
-                callActions(nevent, data);
-            }
-        }
-        catch (e) {
-            console.log("Error on Event Emit:", e);
         }
     }
 }
@@ -66,7 +69,7 @@ const callActions = async (event, data) => {
     console.log("Handled Event Locally:", event);
     // This is first class object assigned to a class.
     if (data.obj.hasOwnProperty('definition') && data.obj.hasOwnProperty('_attributes')) {
-        let cls = AClass.getClass(data.obj.definition.name);
+        let cls = AClass.getClass({name:data.obj.definition.name});
         data.obj = await cls.findDeep(data.obj._attributes.id);
     }
     // Ok now call the handlers.
@@ -96,7 +99,7 @@ function _toString(obj, cache) {
             if (cache.has(value)) {
                 return;
             } else {
-                cache.set(value,true);
+                cache.set(value, true);
                 return value;
             }
         }
@@ -104,37 +107,41 @@ function _toString(obj, cache) {
     });
     return retval;
 }
+
 const sanitizeString = (input) => input.replace(/"/g, ``).replace(/'/g, ``);
+
 function _toJSON(obj) {
     let cache = new Set();
+
     function clone(obj) {
         // if it is a primitive or function, return as is
         if (obj === null || typeof obj !== 'object') {
-            if(typeof obj === 'string') {
+            if (typeof obj === 'string') {
                 return sanitizeString(obj);
             } else {
                 return obj;
             }
         }
         // if circular detected, return undefined
-        if (cache.has(obj)){
+        if (cache.has(obj)) {
             return undefined;
         }
         cache.add(obj);
         // handle Array
         if (Array.isArray(obj)) {
             let newArray = [];
-            for(let value of obj){
+            for (let value of obj) {
                 newArray.push(clone(value));
             }
             return newArray;
         }
         // handle generic object
         let newObj = {};
-        for(let key in obj){
+        for (let key in obj) {
             newObj[key] = clone(obj[key]);
         }
         return newObj;
     }
+
     return clone(obj);
 }

@@ -1,19 +1,27 @@
 const objHandler = require('./ObjectProxy');
 const funcHandler = require('./MethodProxy');
+const z = require("zod");
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
     get: (obj, prop) => {
         if (obj.definition.methods.hasOwnProperty(prop)) {
-            return function (...args) {
-                if (obj.definition.methods[prop].static) {
-                    return funcHandler.run(obj.definition.methods[prop], this, args[0]);
-                } else {
-                    console.error("Cannot call object method with a class. Call with object from new", obj.definition.name + "();");
+            // This is a class method and should have the static flag set.
+            let method = obj.definition.methods[prop];
+            const isAsync = Object.getPrototypeOf(method.fn).constructor.name === 'AsyncFunction';
+            if (isAsync) {
+                return async function (inputs) {
+                    return funcHandler.run(method, this, inputs);
+                }
+            } else {
+                return function (inputs) {
+                    return funcHandler.run(method, this, inputs);
                 }
             }
         }
-        if (prop === 'doc') {
-            return obj.doc;
+        if (prop === 'isProxy') {
+            return "ClassProxy";
         }
         if (prop === '_gid') {
             if (!obj.hasOwnProperty('_gid)')) {
@@ -36,6 +44,11 @@ module.exports = {
         }
         if (prop === 'doc') {
             return obj.doc;
+        }
+        if( prop === 'getDocumentation') {
+            return function (...args) {
+                return _getDocumentation(obj);
+            }
         }
         if (prop === 'toJSON') {
             return function (...args) {
@@ -63,6 +76,26 @@ module.exports = {
                 }
             }
         }
+        if (prop === 'toPrompt') {
+            return function (...args) {
+                let objects = args[0];
+                if (!objects) {
+                    objects = _instances[obj.definition.name];
+                }
+                let retval = "";
+                for (let i in objects) {
+                    retval += objects[i].toPrompt();
+                }
+                return JSON.stringify(retval);
+            }
+        }
+        if (prop === 'schema') {
+            return function (...args) {
+                // Ok I need to take the inputs and create a template that will be based to a genAI to generate the json 
+                // to call the method with the inputs defined in the construct method.
+                return `{ ${toInputCalls(obj.definition.methods.construct.inputs)} }`;
+            }
+        }
         if (prop === 'fromJSON') {
             /* return {
                  _attributes: obj._attributes,
@@ -85,7 +118,8 @@ module.exports = {
                             let subclassName = obj.definition.subClasses[i];
                             retval = await findObject(obj, subclassName, args);
                         }
-                    u}
+                        u
+                    }
                 }
                 return retval;
             }
@@ -109,6 +143,7 @@ module.exports = {
                     return retval;
                 }
             } else {
+                /*
                 return function (...args) {
                     let adaptor = global.ailtire.config.persist?.adaptor;
                     if (adaptor) {
@@ -118,6 +153,7 @@ module.exports = {
                         return obj;
                     }
                 }
+                 */
             }
         } else if (prop === 'instances') {
             return async function (...args) {
@@ -136,7 +172,7 @@ module.exports = {
         obj.definition = obj.__proto__.constructor.definition;
         let uid = obj.definition.name + oid;
 
-        // Check if the class instances are unique and the funtion they are unique by.
+        // Check if the class instances are unique and the function they are unique by.
         if (args[0].id) {
             uid = args[0].id;
         } else if (obj.definition.hasOwnProperty('unique')) {
@@ -217,7 +253,7 @@ function _findObjectInMemory(obj, name, args) {
                 for (let key in args[0]) {
                     let attr = instance._attributes;
                     if (attr.hasOwnProperty(key)) {
-                        if (instance[key] === args[0][key]) {
+                        if (instance[key].toLowerCase() === args[0][key].toLowerCase()) {
                             foundMatch = true;
                         } else {
                             foundMatch = false;
@@ -240,7 +276,7 @@ function _findObjectInMemory(obj, name, args) {
 }
 
 async function _getSubInstances(clsname, retval) {
-    if(!global._instances) {
+    if (!global._instances) {
         global._instances = {};
     }
     if (global._instances.hasOwnProperty(clsname) && global._instances[clsname] !== null) {
@@ -251,7 +287,7 @@ async function _getSubInstances(clsname, retval) {
         let adaptor = global.ailtire.config.persist?.adaptor;
         if (adaptor) {
             await adaptor.loadClass(clsname);
-            if(global._instances.hasOwnProperty(clsname)) {
+            if (global._instances.hasOwnProperty(clsname)) {
                 for (let oname in global._instances[clsname]) {
                     retval[oname] = global._instances[clsname][oname];
                 }
@@ -282,4 +318,86 @@ function _createTransparentProxy(promise) {
             },
         }
     );
+}
+
+function toInputCalls(inputs) {
+    let schema = [];
+    for (const [name, def] of Object.entries(inputs)) {
+        let {type, description, required, default: defValue, values, properties} = def;
+
+        // Map custom types into valid Zod types
+        let item = "";
+        if (type) {
+            switch (type.toLowerCase()) {
+                case 'json':
+                    item = `${name}: {json} // ${description}"`;
+                    break;
+                case 'ref':
+                case 'string':
+                    item = `${name}: "string" // ${description}"`;
+                    break;
+                case 'integer':
+                    item = `${name}: number // ${description}"`;
+                    break;
+                case 'number':
+                    item = `${name}: number // ${description}"`;
+                    break;
+                case 'boolean':
+                    item = `${name}: boolean // ${description}"`;
+                    break;
+                case 'array':
+                    item = `${name}: [`
+                    if (properties && typeof properties === 'object') {
+                        const shape = toInputCalls(properties);
+                        item += shape;
+                    } else {
+                        item += `"string"`;
+                    }
+                    item += `] // ${description}"`;
+                    break;
+                case 'object':
+                    item = `${name}: {`;
+                    if (properties && typeof properties === 'object') {
+                        if (properties && typeof properties === 'object') ;
+                        const shape = toInputCalls(properties);
+                        item += shape;
+                    } else {
+                        item += "json"
+                    }
+                    item += `} // ${description}"`;
+                    break;
+                default:
+                    zodType = z.string();
+            }
+            schema.push(item);
+        }
+    }
+
+    return schema.join(',\n');
+}
+
+function _getDocumentation(obj) {
+    const docPath = path.join(obj.baseDir, 'doc');
+    let documentation = '';
+
+    if (fs.existsSync(docPath)) {
+        const readFilesRecursively = (dir) => {
+            const files = fs.readdirSync(dir);
+
+            files.forEach(file => {
+                const fullPath = path.join(dir, file);
+                const stat = fs.statSync(fullPath);
+
+                if (stat.isDirectory()) {
+                    readFilesRecursively(fullPath);
+                } else if (file.endsWith('.md') || file.endsWith('.emd')) {
+                    documentation += fs.readFileSync(fullPath, 'utf8') + '\n';
+                }
+            });
+        };
+
+        readFilesRecursively(docPath);
+    }
+
+    return documentation;
 }

@@ -124,15 +124,15 @@ module.exports = {
         let wfObj = _get(workflow.name);
         if(!wfObj) {
             _save(workflow, global.topPackage);
-            AEvent.emit("workflow.created", workflow);
+            AEvent.emit({event:"workflow.created", data: workflow });
         } else {
             for(let aname in workflow) {
                 let attr = workflow[aname];
                 wfObj[aname] = workflow[aname];
             }
-            let pkg = APackage.get(wfObj.pkg);
-            _save(wfObj, pkg);
-            AEvent.emit("workflow.updated", wfObj);
+            let package = APackage.get(wfObj.package);
+            _save(wfObj, package);
+            AEvent.emit({event:"workflow.updated", data: wfObj });
         }
         return workflow;
     },
@@ -182,7 +182,7 @@ module.exports = {
         const APackage = require('../../src/Server/APackage');
         let messages = [];
         let workflow = _get(wname);
-        let package = APackage.getPackage(workflow.pkg);
+        let package = APackage.getPackage(workflow.package);
 
         // Get the current usecases, class definitions, and workflows
         // Put them into a string and put them as system information.
@@ -214,7 +214,7 @@ module.exports = {
         const APackage = require('../../src/Server/APackage');
         let messages = [];
         let workflow = _get(wname);
-        let package = APackage.getPackage(workflow.pkg);
+        let package = APackage.getPackage(workflow.package);
         // Get the current usecases, class definitions, and workflows
         // Put them into a string and put them as system information.
         let items = ["usecases", "workflows"];
