@@ -68,9 +68,9 @@ class AItem {
                 },
                 actions: {
                     entry: {
-                        entry1: (obj) => {
+                        entry1: async (obj) => {
                             obj.note.save();
-                            obj.generate();
+                            await obj.generate();
                         }
                     }
                 }

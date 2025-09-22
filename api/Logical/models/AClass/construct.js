@@ -9,9 +9,12 @@ module.exports = {
         name: {
             description: 'Name of the application', type: 'string', required: true
         },
+        description: {
+            description: 'Description of the model', type: 'string', required: false,
+        },
         package: {
             description: 'Package of the model being created.',
-            type: "AClass",
+            type: "APackage",
             required: false,
         },
     },
@@ -51,6 +54,8 @@ module.exports = {
             Generator.process(files, output);
         }
         let cls = AClass.load({dir: path.resolve(output, "models", nameNoSpace), package: package});
+        cls.definition.description = inputs.description;
+        AClass.save(cls);
         return cls;
     }
 };

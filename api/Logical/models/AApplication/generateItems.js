@@ -24,7 +24,7 @@ module.exports = {
     outputs: {
         "type": "Array",
         "description": "Return an array of suggestions of items to create in the applications",
-        "schema": {
+        "properties": {
             type: 'AItem',
             description: 'A suggestion of an item to create in the application'
         }

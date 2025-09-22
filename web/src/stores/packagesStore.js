@@ -13,34 +13,34 @@ export const packageNodes = derived(packages, ($packages) => {
         mapSubPackage(null, $packages.subpackages[pname]);
     }
 
-    function mapSubPackage(parent, package) {
-        idMap[package.name] = {
-            ...package,
-            id: package.name,
+    function mapSubPackage(parent, pkg) {
+        idMap[pkg.name] = {
+            ...pkg,
+            id: pkg.name,
             type: "Package",
             _children: [],
             _view: Package,
-            expandLink: `${API_BASE_URL}/package/get?id=${package.name}`
+            expandLink: `${API_BASE_URL}/ailtire/package/get?id=${pkg.name}`
         };
         if (parent) {
-            idMap[package.name].parent = parent;
-            idMap[parent]._children.push(idMap[package.name]);
+            idMap[pkg.name].parent = parent;
+            idMap[parent]._children.push(idMap[pkg.name]);
         }
-        for (let cname in package.classes) {
+        for (let cname in pkg.classes) {
             idMap[cname] = {
-                ...package.classes[cname],
+                ...pkg.classes[cname],
                 id: cname,
                 name: cname,
                 type: "Class",
-                link: `${API_BASE_URL}/${cname}/list`,
-                expandLink: `${API_BASE_URL}/model/get?id=${cname}`,
+                link: `${API_BASE_URL}/ailtire/${cname}/list`,
+                expandLink: `${API_BASE_URL}/ailtire/model/get?id=${cname}`,
                 _view: Model
             };
-            idMap[cname].parent = package.name;
-            idMap[package.name]._children.push(idMap[cname]);
+            idMap[cname].parent = pkg.name;
+            idMap[pkg.name]._children.push(idMap[cname]);
         }
-        for (let pname in package.subpackages) {
-            mapSubPackage(package.name, package.subpackages[pname]);
+        for (let pname in pkg.subpackages) {
+            mapSubPackage(pkg.name, pkg.subpackages[pname]);
         }
     }
 
@@ -58,8 +58,8 @@ export const modelNodes = derived(models, ($models) => {
         idMap[cname] = {
             ...$models[cname],
             id: cname,
-            expandLink: `${API_BASE_URL}/model/get?id=${cname}`,
-            link: `${API_BASE_URL}/${cname}/list`,
+            expandLink: `${API_BASE_URL}/ailtire/model/get?id=${cname}`,
+            link: `${API_BASE_URL}/ailtire/${cname}/list`,
             name: cname,
             type: "Class",
             _view: Model
@@ -77,7 +77,7 @@ export const modelNodes = derived(models, ($models) => {
 export async function fetchPackages() {
     // usecases.update((state) => ({ ...state, isLoading: true, error: null }));
     try {
-        const res = await fetch(`${API_BASE_URL}/package/list`); // Replace with your API URL
+        const res = await fetch(`${API_BASE_URL}/ailtire/package/list`); // Replace with your API URL
         if (!res.ok) {
             throw new Error(`API Error: ${res.statusText}`);
         }
@@ -86,10 +86,10 @@ export async function fetchPackages() {
         // Update the store with fetched data
         packages.set(data);
     } catch (err) {
-        console.error("Error fetching usecases: ", err);
+        console.error("Error fetching packages: ", err);
     }
     try {
-        const res = await fetch(`${API_BASE_URL}/model/list`); // Replace with your API URL
+        const res = await fetch(`${API_BASE_URL}/ailtire/model/list`); // Replace with your API URL
         if (!res.ok) {
             throw new Error(`API Error: ${res.statusText}`);
         }

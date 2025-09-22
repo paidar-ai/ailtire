@@ -20,9 +20,9 @@ module.exports = {
         // Execute the function with the validated parameters.
         // this needs to check for an async function call.
         // If it does have one return with await.
-        if(method.fn.constructor.name === "AsyncFunction") {
+        if (method.fn.constructor.name === "AsyncFunction") {
             return (async () => {
-                if(method.static) {
+                if (method.static) {
                     let retval = await method.fn(args);
                     return await _processReturnAsync(method, retval, args);
                 } else {
@@ -31,7 +31,7 @@ module.exports = {
                 }
             })();
         } else {
-            if(method.static) {
+            if (method.static) {
                 let retval = method.fn(args);
                 return _processReturn(method, retval, args);
             } else {
@@ -42,27 +42,37 @@ module.exports = {
     }
 };
 
-function _processReturn (method, retval, env) {
-    if (method.exits) {
-        // Only send json if retval has something.
-        if (retval) {
-            try {
-                if (env && env.res) {
-                    if (method.exits.hasOwnProperty('json') && typeof method.exits.json === 'function') {
-                        env.res.json(method.exits.json(retval));
-                    } else if (method.exits.hasOwnProperty('json')) { // default return json in retval.
-                        env.res.json(retval);
-                    }
+const _processReturn = (action, retval, env) => {
+
+    action.exits = action.exits || {};
+    action.exits.success = action.exits.success || (payload => payload);
+    action.exits.rest    = action.exits.rest    || (payload => payload);
+    action.exits.mcp     = action.exits.mcp     || (payload => ({
+        jsonrpc: "2.0",
+        id:      payload.id ?? null,
+        result:  payload
+    }));
+    action.exits.cli   = action.exits.cli   || (payload => playload.id )
+
+
+    // Only send json if retval has something.
+    if (retval) {
+        try {
+            if (!env?.res?.headersSent) {
+                if (env?.isMcp && env?.res) {
+                    const rpcResp = action.exits.mcp(retval);
+                    env.res.json(rpcResp);
+                } else if (env?.res) {
+                    const body = action.exits.rest(retval);
+                    env.rest.json(body);
                 }
-            } catch (e) {
-                console.error("Cannot send json for method:", e);
             }
+        } catch (e) {
+            console.error("Cannot send json for action:", e);
         }
-        if (method.exits.hasOwnProperty('success') && typeof method.exits.success === 'function') {
-             return method.exits.success(retval);
-        } else { // default just retval
-            return retval;
-        }
+    }
+    if (typeof action.exits.success === 'function') {
+        return action.exits.success(retval);
     }
     return retval;
 };
@@ -84,10 +94,10 @@ function _processReturnAsync(method, retval, env) {
             }
         }
         if (method.exits.hasOwnProperty('success') && typeof method.exits.success === 'function') {
-                return method.exits.success(retval);
+            return method.exits.success(retval);
         } else { // default just retval
             return retval;
         }
     }
     return retval;
-};
+}

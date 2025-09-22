@@ -3,12 +3,19 @@ const fs = require("fs");
 const path = require("path");
 
 module.exports = {
-    friendlyName: 'construct', description: `Construct an application directory heirarchy`,
+    friendlyName: 'construct', description: `Construct a package. A package contains an interface, event handlers, and models. This logical package allows to group like things together for a reusable items in the architecture.`,
     static: true,
     inputs: {
         name: {
-            description: 'Name of the application', type: 'string', required: true
-        }, dir: {
+            description: 'Name of the package.', type: 'string', required: true
+        },
+        description: {
+            description: 'Description of the package', type: 'string', required: false,
+        },
+        shortname: {
+            description: 'Short name of the package', type: 'string', required: false,
+        },
+        dir: {
             description: 'Application base directory to load the application definition', type: 'string', required: false
         },
     },

@@ -1,0 +1,31 @@
+@startuml
+title Moment → Insight → Practice → Guidance  (example: Export Report)
+actor User
+participant UI
+participant "Behavior API" as BEH
+database "InsightStore" as INS
+collections "PracticeAgg" as PRA
+participant "Recommender" as REC
+
+User -> UI: Perform action (Scenario step)
+UI -> BEH: POST /behavior/moment {moment}
+activate BEH
+BEH -> INS: updateInsight(user, actor, key, delta)
+INS --> BEH: insight{confidence,status}
+deactivate BEH
+
+... periodic or streaming ...
+BEH -> PRA: aggregate(actor)  # k-anon filter
+PRA --> BEH: practice{patterns,guardrails,hints}
+
+== Request guidance ==
+UI -> REC: GET /behavior/guidance?actor&usecase&context
+activate REC
+REC -> PRA: fetch(actor.practice)
+REC -> INS: check user veto (Contested?)
+REC --> UI: hints/defaults (scored)
+deactivate REC
+
+User -> UI: Accept / Undo
+UI -> BEH: POST /behavior/feedback {momentId, type, strength}
+@enduml

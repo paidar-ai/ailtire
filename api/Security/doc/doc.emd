@@ -1,0 +1,53 @@
+security/
+    ├── policies/            # Fine‐grained resource/action policies
+    │   ├── devicePolicy.js
+    │   └── userPolicy.js
+    │
+    ├── protocols/           # Per‐protocol authentication rules
+    │   ├── rest.js
+    │   ├── mcp.js
+    │   └── cli.js
+    │
+    ├── roles/               # Role definitions (auto‐discovered)
+    │   ├── admin/
+    │   │   └── index.js     # exports { name, permissions: [...] }
+    │   ├── manager/
+    │   │   └── index.js
+    │   └── guest/
+    │       └── index.js
+
+
+
+Example of a APolicy definition.
+
+module.exports = {
+    name: 'devicePolicy',
+    description: 'Policy for device',
+    appliesTo: [
+        'device/create',
+        'device/delete'
+    ]
+    rules: [
+        {
+            name: "admin",
+            description: 'Admin can do anything',
+            fn: (actor,action,resource) => {
+                if (actor.role === 'admin') {
+                    return true;
+                }
+                return false;
+            }
+        },
+        {
+            name: "owner",
+            description: 'Owner can do anything',
+            fn: (actor,action,resource) => {
+                if (actor === resource.owner)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+    ]
+}

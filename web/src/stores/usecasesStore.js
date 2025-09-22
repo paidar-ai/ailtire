@@ -38,7 +38,7 @@ export const usecaseNodes = derived(usecases, ($usecases) => {
 export async function fetchUsecases() {
     // usecases.update((state) => ({ ...state, isLoading: true, error: null }));
     try {
-        const res = await fetch(`${API_BASE_URL}/usecase/list`); // Replace with your API URL
+        const res = await fetch(`${API_BASE_URL}/ailtire/usecase/list`); // Replace with your API URL
         if (!res.ok) {
             throw new Error(`API Error: ${res.statusText}`);
         }

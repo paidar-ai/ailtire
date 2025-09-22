@@ -1,52 +1,32 @@
-
 class ALocation {
     static definition = {
         name: 'ALocation',
-        description: 'Description ' +
-            'long description',
+        description: 'A physical or logical site within an environment.',
         attributes: {
-            attr1: {
+            ltype: {
                 type: 'string',
-                description: 'description' +
-                    ' long description'
+                description: 'Type of location, e.g. "site", "rack", "room", "data center", "cloud", "edge"',
+            },
+            description: {
+                type: 'string',
+                description: 'Description of the location',
+            },
+            name: {
+                type: 'string',
+                description: 'Name of the location',
+            },
+            contact: {
+                type: 'string',
+                description: 'Contact information or owner of this location',
+            },
+            default: {
+                type: 'boolean',
+                description: 'Whether this is the default location for its environment',
             }
         },
         associations: {
-            assoc1: {
-                type: 'ModelName',
-                cardinality: 1,
-                composition: false,
-                owner: false,
-            },
-        },
-        /*
-        statenet: {
-            Init: {
-                description: "Initial State"
-                events: {
-                    create: {
-                        StateName: { }
-                    }
-                }
-            },
-            StateName: {
-                description: "My Description of the state",
-                events: {
-                    eventName: {
-                        StateName: {
-                            condition: function(obj) { ... },
-                            action: function(obj) { ... },
-                        }
-                    },
-                    eventName2 ...
-                }
-                actions: {
-                    entry: { entry1: function(obj) { ... } },
-                    exit: { exit1: function(obj): { ... } }
-                }
-            }
+            // no further associations
         }
-        */
     }
 }
 

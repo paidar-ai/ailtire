@@ -1,0 +1,31 @@
+@startuml
+title Scenario activity with feedback-driven learning
+start
+:Start Scenario;
+:Capture Moment (action, context, outcome);
+if (Implicit signal?) then (yes)
+  :Derive feedback (e.g., undo, error, dwell);
+else (no)
+endif
+:POST /behavior/moment;
+:Update Insight (decay/counter-signal);
+
+if (Insight.status becomes Active?) then (yes)
+  :Mark applicable for guidance;
+else (no)
+endif
+
+if (k-anon ≥ threshold for Actor/key?) then (yes)
+  :Aggregate into Practice (patterns/guardrails/hints);
+else (no)
+endif
+
+:Request Guidance for next step;
+if (User accepts?) then (yes)
+  :Apply default/hint;
+  :Positive feedback;
+else (no)
+  :Negative feedback or neutral;
+endif
+stop
+@enduml

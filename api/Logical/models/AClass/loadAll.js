@@ -17,6 +17,11 @@ module.exports = {
             type: 'string',
             required: true
         },
+        package: {
+            description: 'Parent Package of the class definition',
+            type: 'APackage',
+            required: true
+        }
     },
 
     exits: {

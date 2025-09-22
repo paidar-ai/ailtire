@@ -1,6 +1,3 @@
-const path = require('path');
-const helper = require('../../../../src/utils/helper');
-const classProxy = require("../../../../src/Proxy/ClassProxy");
 module.exports = {
     friendlyName: 'load',
     description: 'Load a AClass from the models directory',
@@ -49,14 +46,45 @@ module.exports = {
             // set the owners array for persistence.
             myClass.definition.owners = new Array();
             myClass.definition.dir = dir;
-            package.classes[myClass.definition.name] = myProxy;
             global.classes[myClass.definition.name] = myProxy;
             global[myClass.definition.name] = myProxy;
             myClass.definition.methods = {};
         }
+
+        package.classes[myClass.definition.name] = myProxy;
         if(myClass.definition.statenet) {
             let stateNet = AStateNet.load({definition:myClass.definition.statenet});
             myProxy.statenet = stateNet;
+        }
+        if(myClass.definition.attributes) {
+            for(let name in myClass.definition.attributes) {
+                let attr = null;
+                if(global.hasOwnProperty("AAtribute")) {
+                    attr = new AAtribute(myClass.definition.attributes[name]);
+                } else {
+                    attr = myClass.definition.attributes[name];
+                }
+                attr.parent = myProxy;
+                attr.name = name;
+                attr.uid = `${myProxy.uid}.${name}`;
+                myProxy.definition.attributes[name] = attr;
+            }
+        }
+        if(myClass.definition.associations) {
+            for(let name in myClass.definition.associations) {
+                let attr = null;
+                if (global.hasOwnProperty("AAssociation")) {
+                    attr = new AAssociation(myClass.definition.associations[name]);
+                    attr.name = name;
+                } else {
+                    attr = myClass.definition.associations[name];
+                }
+                // let attr = new AAssociation(myClass.definition.associations[name]);
+                attr.parent = myProxy;
+                attr.name = name;
+                attr.uid = `${myProxy.uid}.${name}`;
+                myProxy.definition.associations[name] = attr;
+            }
         }
         AMethod.loadAll({cls: myProxy});
         // myClass.loadDocs();

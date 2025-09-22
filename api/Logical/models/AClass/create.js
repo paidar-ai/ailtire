@@ -2,7 +2,7 @@ const path = require('path');
 module.exports = {
     friendlyName: 'create',
     description: 'Create an model',
-    static: true,
+    static: false,
     inputs: {
         name: {
             description: 'The name of the model',
@@ -23,7 +23,7 @@ module.exports = {
     exits: {
     },
 
-    fn: function (inputs, env) {
+    fn: function (obj, inputs, env) {
         for(let aname in inputs) {
             if(aname !== 'dontSave') {
                 obj[aname] = inputs[aname];

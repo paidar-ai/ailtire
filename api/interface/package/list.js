@@ -9,6 +9,10 @@ module.exports = {
         type: "json",
         description: "Map of Packages",
     },
+    exits: {
+        json: (obj) => { return obj; },
+        success: (obj) => { return obj; }
+    },
 
     fn: function (inputs, env) {
         let pkg = global.topPackage;

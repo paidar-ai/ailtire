@@ -1,18 +1,19 @@
-const fs = require("fs");
+const AIHelper = require("../../../../src/Server/AIHelper");
+
 module.exports = {
-    friendlyName: 'generateAssociations',
-    description: 'Generate Associations',
+    friendlyName: 'generate',
+    description: 'Generate Models from the prompt',
     static: true,
     inputs: {
-        id: {
-            description: 'The id of the model',
-            type: 'string',
-            required: true
+        prompt: {
+            type: "string",
+            description: "The prompt is added to the current note to generate items from",
+            required: false
         },
-        scope: {
-            description: 'The scope of the generation',
-            type: 'string',
-            required: true
+        note: {
+            type: "ANote",
+            description: "The note to use to generate items from",
+            required: false
         }
     },
 
@@ -23,31 +24,47 @@ module.exports = {
     },
 
     fn: async function (inputs, env) {
-        // Find the scenario from the usecase.
-        let cname = inputs.id;
-        let scope = inputs.scope;
-        switch (scope) {
-            case "attributes":
-                return await AClass.generateAttributes(cname);
-                break;
-            case "description":
-                return await AClass.generateDescription(cname);
-                break;
-            case "associations":
-                return await AClass.generateAssociations(cname);
-                break;
-            case "documentation":
-                return await AClass.generateDocumentation(cname);
-                break;
-            case "methods":
-                return await AClass.generateMethods(cname);
-                break;
-            case "statenet":
-                return await AClass.generateStateNet(cname);
-                break;
-            default:
-                return await AClass.generateDocumentation(cname);
-                break;
+        const modelFormat = AClass.schema();
+
+        let messages = [];
+        let package = global.topPackage;
+        let pjson = package.toPrompt();
+        let cjson = AClass.toPrompt();
+        let ason = AAttribute.schema();
+
+
+        let content = `Use the following  package definition for analysis of the user prompt: ${pjson}`;
+        messages.push({role: 'system', content: content});
+        content = `Use the following  class definitions for analysis of the user prompt: ${cjson}`;
+        messages.push({role: 'system', content: content});
+
+        // Get the current documentation. Add it as system information.
+        messages.push({role: 'system',
+            content: `From the user prompt identify and generate classes using the following as a` +
+                ` template: ${modelFormat}. Include the attributes of the class in the attributes field ` +
+                `following this format: ${ason}. Output should be in an array of json objects. Only return the json.`});
+        if(inputs.prompt) {
+            messages.push({role: 'user', content: inputs.prompt});
+        }
+        let note = inputs.note;
+        if(!note) {
+            note = await ANote.create({text: "Generate models from the prompt: " + inputs.prompt});
+        }
+        messages.push({ role: 'user', content: note.text });
+        let models = await AIHelper.askForCode(messages);
+        try {
+            // Iterate over the list of use cases and save them.
+            let items = [];
+            for (let i in models) {
+                let model = models[i];
+                let item = note.addToItems({type: 'AClass', json: model});
+                item.note = note;
+                items.push(item);
+            }
+            note.save();
+            return note;
+        } catch (e) {
+            console.error("Error parsing JSON:", e);
         }
     }
 };

@@ -1,4 +1,5 @@
 const path = require('path');
+const AIHelper = require("../../../../src/Server/AIHelper");
 
 module.exports = {
     friendlyName: 'generateModels',

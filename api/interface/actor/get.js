@@ -16,7 +16,11 @@ module.exports = {
     },
 
     exits: {
-        json: (obj) => {return obj;},
+        success: {
+            cli: (obj) => { return obj.name; },
+            json: (obj) => { return obj.name; },
+        },
+        notFound: (err) => { return err.message; }
     },
 
     fn: function (inputs, env) {
@@ -49,28 +53,7 @@ module.exports = {
             return actor;
         } else {
             console.error("Could not find the Actor:", aname);
-            env.res.status(500).send({error: "Actor could not be found"});
+            throw new AError.NotFound("Actor could not be found: " + aname);
         }
-        return null;
     }
 };
-
-function findActor(aname) {
-    if (global.actors.hasOwnProperty(aname)) {
-        return global.actors[aname];
-    } else {
-        for (let a in global.actors) {
-            let actor = global.actors[a];
-            if (a.toLowerCase() === aname.toLowerCase()) {
-                return actor;
-            }
-            if (actor.name.toLowerCase().replace(/\s/g, '') === aname.toLowerCase().replace(/\s/g, '')) {
-                return actor;
-            }
-            if(actor.shortname.toLowerCase() === aname.toLowerCase()) {
-                return actor;
-            }
-        }
-    }
-    return null;
-}

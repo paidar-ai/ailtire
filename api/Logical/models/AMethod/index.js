@@ -31,11 +31,15 @@ class AMethod {
             uid: {
                 type: "string",
                 description: "Unique Identification includes owning model uid."
+            },
+            static: {
+                type: "boolean",
+                description: "True if the method is static"
             }
         },
         associations: {
             owner: {
-                type: 'AClass',
+                type: 'ref',
                 cardinality: 1,
                 composition: false,
                 owner: false,

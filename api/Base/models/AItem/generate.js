@@ -38,7 +38,7 @@ module.exports = {
                 if (!model) {
                     console.error("Model note created for:", obj.json);
                 }
-                obj.objectID = model.name;
+                obj.objectID = model.definition.name;
                 break;
             case 'AActionItem':
                 let action = new AActionItem(obj.json);
@@ -50,5 +50,6 @@ module.exports = {
                 console.log(retval);
                 break;
         }
+        obj.note.save();
     }
 };

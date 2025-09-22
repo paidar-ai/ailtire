@@ -9,6 +9,9 @@ const isFile = source => !fs.lstatSync(source).isDirectory();
 const getDirectories = source => fs.readdirSync(source).map(name => path.join(source, name)).filter(isDirectory);
 const getFiles = source => fs.readdirSync(source).map(name => path.join(source, name)).filter(isFile);
 
+const protocols = require('../security/protocols/index.js');
+const minimatch = require('minimatch')
+
 module.exports = {
     execute: async (action, inputs, env) => {
         let retval = await execute(action, inputs, env);
@@ -365,19 +368,23 @@ function _addMCPTool(mcpServer, interface) {
     if(interface.outputs) {
         def.outputSchema = toZodObject({retval: interface.outputs});
     }
-    mcpServer.registerTool(interface.path, def, async (inputs) => {
-        let value = await execute(interface, inputs, {mcp: true});
-        try {
+    try {
+        mcpServer.registerTool(interface.path, def, async (inputs) => {
+            let value = await execute(interface, inputs, {mcp: true});
+            try {
 
-            // let retval = z.object(def.outputSchema).parse({retval: value});
-            return {structuredContent: {retval: value}};
-        }
-        catch(e) {
-            console.error("Error parsing output", e);
-            throw e;
-        }
+                // let retval = z.object(def.outputSchema).parse({retval: value});
+                return {structuredContent: {retval: value}};
+            } catch (e) {
+                console.error("Error parsing output", e);
+                throw e;
+            }
 
-    });
+        })
+    }
+    catch(err) {
+       // console.error("Register Tool Error:", err);
+    }
 }
 
 function toZodObject(inputs, title) {
@@ -456,7 +463,7 @@ function _updateRESTRoutes(server, path, action) {
         });
     } else {
         server.post('*' + path, async (req, res) => {
-            req.url = req.url.replace(config.urlPrefix, '');
+            // req.url = req.url.replace(config.urlPrefix, '');
             await execute(action, req.query, {req: req, res: res});
         });
         server.all('*' + path, async (req, res) => {
@@ -580,36 +587,99 @@ const execute = async (action, inputs, env) => {
     const retval = await _executeFunction(action, finputs, env);
     return retval;
 };
-const _processReturn = (action, retval, env) => {
-    if (action.exits) {
-        // Only send json if retval has something.
-        if (retval) {
-            try {
-                if (env && env.res) {
-                    if (!env.res.headersSent) {
-                        if (action.exits.hasOwnProperty('json') && typeof action.exits.json === 'function') {
-                            env.res.json(action.exits.json(retval));
-                        } else if (action.exits.hasOwnProperty('json')) { // default return json in retval.
-                            env.res.json(retval);
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error("Cannot send json for action:", e);
-            }
+
+function _processReturn(action, payload, env) {
+    action.exits = action.exits || {};
+
+    // Ensure each exit key has {cli,rest,mcp}
+    for (const key of Object.keys(action.exits)) {
+        const ex = action.exits[key];
+        // If developer provided a single fn, convert to object shorthand
+        if (typeof ex === 'function') {
+            action.exits[key] = { cli: ex, rest: ex, mcp: ex };
         }
-        if (action.exits.hasOwnProperty('success') && typeof action.exits.success === 'function') {
-            return action.exits.success(retval);
-        } else { // default just retval
-            return retval;
+        // Otherwise assume it’s already an object and fill missing branches
+        action.exits[key].cli  = action.exits[key].cli  || (x => x);
+        action.exits[key].rest = action.exits[key].rest || (x => x);
+        action.exits[key].mcp  = action.exits[key].mcp  || (x => ({ jsonrpc:"2.0", id:null, result:x }));
+    }
+
+    // Guarantee a “success” exit
+    if (!action.exits.success) {
+        action.exits.success = {
+            cli:  x => x,
+            rest: x => x,
+            mcp:  x => ({ jsonrpc:"2.0", id:null, result:x })
+        };
+    }
+
+    // Determine mode
+    const mode = env?.isMcp
+        ? 'mcp'
+        : env?.res
+            ? 'rest'
+            : 'cli';
+
+    // Invoke serializer
+    const out = action.exits.success[mode](payload);
+
+    // Send or return
+    if (mode === 'rest' && env.res && !env.res.headersSent) {
+        return env.res.json(out);
+    }
+    if (mode === 'mcp'  && env.res && !env.res.headersSent) {
+        return env.res.json(out);
+    }
+    // cli or direct caller
+    return out;
+}
+
+const authorize = (action, env) => {
+
+    if(!ailtire.config.authEnabled) return;
+
+    const mode = env.isMcp ? 'mcp' : env.res ? 'rest' : 'cli';
+    const key = action.path;
+    const perms = env.actor.permissions || {};
+
+    const allowed = perms.some(pat => {
+        if(pat === '*') return true;
+        return minimatch(key, pat);
+    });
+    if(!allowed) {
+        throw new AppError.Forbidden(`Missing permission: ${key}`);
+    }
+}
+const _executeFunction = async (action, inputs, env) => {
+
+    try {
+    if(ailtire?.config?.authEnabled) {
+        if(!env.req.url.includes('/auth/')) {
+            // Authenticate the user
+            await protocols.authenticate(env);
+
+
+            authorize(action, env);
         }
     }
-    return retval;
-};
-const _executeFunction = async (action, inputs, env) => {
+
+    // 2b) Policy checks
+    if(global.policies) {
+        for (let policy of global.policies) {
+            if (policy.appliesTo.some(p => match(p, action.permissionKey))) {
+                for (let ruleFn of Object.values(policy.rules)) {
+                    if (!await ruleFn(env.actor, action.permissionKey, inputs, env)) {
+                        throw new AError.Forbidden(`Policy ${policy.name} blocked ${action.permissionKey}`);
+                    }
+                }
+            }
+        }
+    }
+
+
+
     // Default is to pass on the inputs.
     let retval = inputs;
-    try {
         if (action.fn.constructor.name === 'AsyncFunction') {
             return (async () => {
                 try {
@@ -625,20 +695,57 @@ const _executeFunction = async (action, inputs, env) => {
             return _processReturn(action, retval, env);
         }
     } catch (e) {
-        for (let name in action.exits) {
-            if (name === e.type) {
-                retval = action.exits[name](e.inputs);
-            }
-        }
-        if (env && env.res) {
-            console.error("Error:", e);
-            console.error("Error Message:", retval.message);
-            // env.res.status(retval.status).json({error: retval.message });
-        }
-        console.log("Error:", e, retval);
-        throw new Error(e, retval);
+        _processError(action, e, env);
     }
 }
+
+function _processError(action, err, env) {
+    action.exits = action.exits || {};
+
+    // Same normalization for exit definitions
+    for (const key of Object.keys(action.exits)) {
+        const ex = action.exits[key];
+        if (typeof ex === 'function') {
+            action.exits[key] = { cli: ex, rest: ex, mcp: ex };
+        }
+        action.exits[key].cli  = action.exits[key].cli  || (e => { throw e; });
+        action.exits[key].rest = action.exits[key].rest || (e => ({ error: e.message }));
+        action.exits[key].mcp  = action.exits[key].mcp  || (e => ({ jsonrpc:"2.0", id:null, error:{ code:e.rpcCode||-32000, message:e.message }}));
+    }
+
+    // Pick exit key by err.exit or err.name, else “error”
+    const exitKey = err.exit
+        || Object.keys(action.exits).find(k => k.toLowerCase() === err.name.toLowerCase())
+        || 'error';
+
+    const mode = env?.isMcp
+        ? 'mcp'
+        : env?.res
+            ? 'rest'
+            : 'cli';
+
+    // Invoke the serializer
+    let out = err;
+    if(action.exits && action.exits.hasOwnProperty(exitKey) && action.exits[exitKey].hasOwnProperty(mode)) {
+        out = action.exits[exitKey][mode](err);
+    }
+
+    // Send or return
+    if (mode === 'rest' && env.res && !env.res.headersSent) {
+        const status = err.httpStatus || 500;
+        env.res.status(status).json(out);
+        return;
+    }
+    if (mode === 'mcp'  && env.res && !env.res.headersSent) {
+        const status = err.httpStatus || 500;
+        env.res.status(status).json(out);
+        return;
+    }
+
+    // CLI or direct caller: if the cli-branch throws, bubble; else return
+    return out;
+}
+
 const find = (name) => {
     const AClass = require('./AClass');
     if(typeof name !== "string") {

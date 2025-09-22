@@ -27,8 +27,11 @@ module.exports = {
             }
         }
         noteDef.items = [];
-        for(let i in obj.items) {
-            noteDef.items.push(obj.items[i].save());
+        let items = obj.items;
+        for(let i in items) {
+            let myItem = items[i];
+            let myItemJSON = myItem.save();
+            noteDef.items.push(myItemJSON);
         }
         fs.writeFileSync(filename, `module.exports = ${JSON.stringify(noteDef, null, 2)};`);
         return obj;

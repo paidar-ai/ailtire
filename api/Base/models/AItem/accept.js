@@ -5,7 +5,7 @@ module.exports = {
     description: 'Accept the item to be generated',
     static: false, // True is for Class methods. False is for object based.
     inputs: {
-        "text": {
+        "reason": {
             "type": "string",
             "description": "The reason the item was accepted",
             "required": false
@@ -23,7 +23,7 @@ module.exports = {
 
     fn: function (obj, inputs, env) {
         // inputs contains the obj for the this method.
-        let text = inputs?.text;
+        let text = inputs?.reason;
         // obj has the obj for the method.
         obj.reason = text || "Not specified";
         return obj;

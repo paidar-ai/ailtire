@@ -3,6 +3,7 @@ const funcHandler = require('./MethodProxy');
 const z = require("zod");
 const fs = require('fs');
 const path = require('path');
+const AIHelper = require('../Server/AIHelper');
 
 module.exports = {
     get: (obj, prop) => {
@@ -18,6 +19,11 @@ module.exports = {
                 return function (inputs) {
                     return funcHandler.run(method, this, inputs);
                 }
+            }
+        }
+        if(prop === 'hasOwnProperty') {
+            return function (...args) {
+                return obj.hasOwnProperty(args[0]);
             }
         }
         if (prop === 'isProxy') {
@@ -93,7 +99,10 @@ module.exports = {
             return function (...args) {
                 // Ok I need to take the inputs and create a template that will be based to a genAI to generate the json 
                 // to call the method with the inputs defined in the construct method.
-                return `{ ${toInputCalls(obj.definition.methods.construct.inputs)} }`;
+                if( obj.definition.methods.hasOwnProperty( "construct" )) {
+                    return `{ ${toInputCalls(obj.definition.methods.construct.inputs)} }`;
+                }
+                return toInputCalls(obj.definition.attributes);
             }
         }
         if (prop === 'fromJSON') {
@@ -108,6 +117,19 @@ module.exports = {
                 return {}
             }
         }
+        if(prop === 'add') {
+            return function (...args) {
+                let assocName = args[0];
+                let aobj = args[1];
+                if (!aobj.isProxy) {
+                    aobj = aobj._proxy;
+                }
+                let uid = aobj._attributes.name;
+                let assocDef = obj.definition[assocName];
+                assocDef[uid] = aobj;
+                return aobj;
+            }
+        }
         // Need to find all of the other subclass items as well.
         if (prop === 'findDeep') {
             return async function (...args) {
@@ -118,7 +140,6 @@ module.exports = {
                             let subclassName = obj.definition.subClasses[i];
                             retval = await findObject(obj, subclassName, args);
                         }
-                        u
                     }
                 }
                 return retval;
@@ -161,6 +182,25 @@ module.exports = {
                 await _getSubInstances(obj.definition.name, retval);
                 return retval;
             }
+        } else if (prop === 'aiUpdate') {
+            return async function (...args) {
+                return await _aiUpdate(this, args[0]);
+            }
+        } else if(prop === 'isTypeOf') {
+            return function (...args) {
+                let inputs =  args[0];
+                if(inputs.name === 'AClass') {
+                    return true;
+                }
+                if(inputs.name === obj.definition.name || inputs.name.toLowerCase() === obj.definition.name.toLowerCase()) {
+                    return true;
+                }
+                if(obj.extends) {
+                    let parentClass = AClass.find({name: obj.extends})
+                    return parentClass.IsTypeOf({name:inputs.name});
+                }
+                return false;
+            }
         }
     },
     construct: (target, args) => {
@@ -172,6 +212,15 @@ module.exports = {
         obj.definition = obj.__proto__.constructor.definition;
         let uid = obj.definition.name + oid;
 
+        // Check for a duplicate. Someone constructing a new object with an object. That should pass back the same object.
+        try {
+            if(args[0].isProxy) {
+                return args[0];
+            }
+        }
+        catch(e) {
+            // continue to load the object.
+        }
         // Check if the class instances are unique and the function they are unique by.
         if (args[0].id) {
             uid = args[0].id;
@@ -206,6 +255,7 @@ module.exports = {
         } else {
             proxy = global._instances[target.name][obj._attributes.id];
         }
+        try {
         if (!args[0].hasOwnProperty('_loading')) {
             proxy.create(args[0]);
         } else {
@@ -213,6 +263,10 @@ module.exports = {
             if (args[0]._file) {
                 obj._persist = {file: args[0]._file._file, _clsName: args[0]._file._clsName, notLoaded: true};
             }
+        }
+        }
+        catch(e) {
+            console.log(e);
         }
 
         return proxy;
@@ -367,7 +421,7 @@ function toInputCalls(inputs) {
                     item += `} // ${description}"`;
                     break;
                 default:
-                    zodType = z.string();
+                    item = `${name}: "string" // ${description}"`;
             }
             schema.push(item);
         }
@@ -377,27 +431,106 @@ function toInputCalls(inputs) {
 }
 
 function _getDocumentation(obj) {
-    const docPath = path.join(obj.baseDir, 'doc');
-    let documentation = '';
+    if(obj.dir) {
+        const docPath = path.join(obj.dir, 'doc');
+        let documentation = '';
 
-    if (fs.existsSync(docPath)) {
-        const readFilesRecursively = (dir) => {
-            const files = fs.readdirSync(dir);
+        if (fs.existsSync(docPath)) {
+            const readFilesRecursively = (dir) => {
+                const files = fs.readdirSync(dir);
 
-            files.forEach(file => {
-                const fullPath = path.join(dir, file);
-                const stat = fs.statSync(fullPath);
+                files.forEach(file => {
+                    const fullPath = path.join(dir, file);
+                    const stat = fs.statSync(fullPath);
 
-                if (stat.isDirectory()) {
-                    readFilesRecursively(fullPath);
-                } else if (file.endsWith('.md') || file.endsWith('.emd')) {
-                    documentation += fs.readFileSync(fullPath, 'utf8') + '\n';
-                }
-            });
-        };
+                    if (stat.isDirectory()) {
+                        readFilesRecursively(fullPath);
+                    } else if (file.endsWith('.md') || file.endsWith('.emd')) {
+                        documentation += fs.readFileSync(fullPath, 'utf8') + '\n';
+                    }
+                });
+            };
 
-        readFilesRecursively(docPath);
+            readFilesRecursively(docPath);
+        }
+
+        return documentation;
     }
+    return "";
+}
 
-    return documentation;
+async function _aiUpdate(obj, inputs) {
+
+    let fields = inputs.fields ? inputs.fields.split(',') : ['description', 'documentation'];
+    let cls = inputs.cls;
+
+    // Make sure the fields are valid attributes in the obj definition
+    let flag = false;
+    let objPrompt = cls.toPrompt();
+    let doc = cls.getDocumentation();
+    let userPrompt = inputs.prompt ? inputs.prompt : '';
+
+    for (let field of fields) {
+        if (obj.definition.attributes.hasOwnProperty(field) || field === "documentation") {
+            let messages = [];
+            messages.push({role: 'system', content: `Use the following ${cls.definition.name} for analysis of the user prompt: ${objPrompt}`});
+            if(doc) {
+                messages.push({
+                    role: 'system',
+                    content: `Use the following as ${cls.definition.name} documentation for analysis of the user prompt: ${doc}`
+                });
+            }
+            message.push({role: 'system', content: `Generate a ${field} for ${cls.definition.name} based on the user prompt and the current documentation and specification`});
+            message.push({role: 'user', content: userPrompt});
+            let response = await AIHelper.ask(messages);
+            cls[field] = response;
+        } else if(obj.definition.associations.hasOwnProperty(field)) {
+
+            let assocDef = obj.definition.associations[field];
+            const many = assocDef.cardinality === 'n';
+            let assocClass = AClass.getClass({name:assocDef.type});
+            let assocFormat = assocClass.schema();
+
+            // build a system prompt for GenAI
+            const messages = [];
+            messages.push({
+                role: 'system',
+                content:
+                    `Parent ${cls.definition.name} spec:\n${ objPrompt }\n\n` +
+                    `Association name: ${ field }\n` +
+                    `Description: ${ assocDef.description }\n` +
+                    `Cardinality: ${ assocDef.cardinality }\n\n` +
+                    (doc
+                        ? `Parent documentation:\n${ doc }\n\n`
+                        : '')
+            });
+            messages.push({
+                role: 'user',
+                content:
+                    `“${ userPrompt }”.\n` +
+                    `Please generate ${ many ? 'an array of' : 'a single' } ` +
+                    `${ assocDef.type } object${ many ? 's' : '' } ` +
+                    `to attach under the "${ field }" association. ` +
+                    `Return JSON objects matching the following format: ${assocFormat}\n\n`
+            });
+
+            // ask GenAI to produce the raw JSON for child(ren)
+            const results = await AIHelper.askForCode(messages);
+            if(results.length > 0) {
+                if (many) {
+                    for (let child of results) {
+                        // e.g. ADisk.generate(childDef)
+                        const childObj = await assocClass.construct(child);
+                        cls.add(field, childObj);
+                    }
+                } else {
+                    const childObj = await assocClass.construct(results[0]);
+                    cls.add(field, childObj.toJSON());
+                }
+            }
+        }
+    }
+    obj.save(cls);
+
+    return cls;
 }

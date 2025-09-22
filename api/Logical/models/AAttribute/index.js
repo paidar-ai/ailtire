@@ -19,14 +19,13 @@ class AAttribute {
             transient: {
                 type: 'boolean',
                 description: 'True if the attribute is not stored presistently',
+            },
+            parent: {
+                type: 'json',
+                description: 'This represents the owning class of the attribute',
             }
         },
         associations: {
-            owner: {
-                type: 'AClass',
-                cardinality: '1',
-                description: 'This represents the owning class of the attribute',
-            },
         },
     }
 }

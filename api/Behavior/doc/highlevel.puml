@@ -1,0 +1,86 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package "Behavior" {
+  class Actor <<uml>> {
+    +name: String
+  }
+
+  class UseCase <<uml>> {
+    +name: String
+    +goal: String
+  }
+
+  class Scenario <<uml>> {
+    +name: String
+    +preconditions: Text
+    +postconditions: Text
+  }
+
+  class Moment <<behavior>> {
+    +timestamp: Instant
+    +context: Map
+    +action: String
+  }
+
+  class Feedback <<behavior>> {
+    +type: {Positive|Negative}
+    +strength: Float
+    +reason: Text
+  }
+
+  class Insight <<adaptive>> {
+    +key: String
+    +confidence: Float
+    +lastUpdated: Instant
+  }
+
+  class Practice <<shared>> {
+    +actorId: ID
+    +patterns: Text       // distilled know-how
+    +guardrails: Text     // "do/don't" norms
+  }
+
+  class Guidance <<output>> {
+    +hint: Text
+    +default: Map
+    +applicability: Text
+  }
+
+  ' Relationships
+  UseCase "1" o- "0..*" Scenario
+  Scenario "1" o- "0..*" Moment
+  Moment "0..*" -u- "0..*" Feedback : modulates >
+  Insight "0..*" <-u- Moment : updates >
+  Practice "1" <-d- "0..*" Insight : aggregate (by Actor) >
+  Guidance "0..*" <-d- Practice : emits >
+  UseCase "0..*" <-l- Guidance : informs >
+
+  ' Actor participation
+  Actor "1" o-- "0..*" UseCase : participates-in
+}
+
+package "Identity" {
+  class User {
+    +userId: ID
+    +name: String
+  }
+  User "1" ..> "0..*" Actor : plays
+}
+
+
+class GenAISession <<session>> {
+    +sessionId: ID
+    +actorId: ID
+    +createdAt: Instant
+    +lastAccessedAt: Instant
+    +context: Map
+    +messages: List<Text>       // full history
+  }
+
+  Identity "1" o--> "0..*" GenAISession : owns
+
+  GenAISession -> Moment : builds
+
+@enduml

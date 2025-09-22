@@ -47,7 +47,7 @@ module.exports = {
         });
 
         normalizeConfig(config);
-        global.ailtire = { config: config };
+        global.ailtire.config = config;
 
         // Action.defaults(server);
         if(config.mcp) {

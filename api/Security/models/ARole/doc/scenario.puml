@@ -1,0 +1,43 @@
+@startuml
+title User Registration & Token Flow
+
+actor User
+participant "Client UI" as UI
+participant "AuthService" as Auth
+participant "TokenService" as Token
+participant "API Gateway" as Gateway
+participant "ResourceService" as Resource
+
+== Registration / Login ==
+User -> UI : Navigate to Registration/Login
+UI -> Auth : POST /auth/register\n{ username, password }
+Auth --> UI : 201 Created /error
+note right of Auth : Stores user credentials\n(e.g. hashed password)
+
+User -> UI : Submit Login Form
+UI -> Auth : POST /auth/login\n{ username, password }
+Auth -> Token : createToken(userId, scopes)
+Token --> Auth : { accessToken, refreshToken }
+Auth --> UI : 200 OK\n{ accessToken, refreshToken }
+
+== Accessing Protected Resource ==
+User -> UI : Click “Get Profile”
+UI -> Gateway : GET /api/profile\nAuthorization: Bearer <accessToken>
+Gateway -> Auth : validateToken(<accessToken>)
+Auth --> Gateway : valid | invalid
+alt valid
+    Gateway -> Resource : GET /profile?userId=<from token>
+    Resource --> Gateway : 200 OK\n{ profileData }
+    Gateway --> UI : 200 OK\n{ profileData }
+else invalid
+    Gateway --> UI : 401 Unauthorized
+end
+
+== Token Refresh ==
+note over UI, Auth: When accessToken expires
+UI -> Auth : POST /auth/refresh\n{ refreshToken }
+Auth -> Token : refreshToken(oldRefreshToken)
+Token --> Auth : { newAccessToken, newRefreshToken }
+Auth --> UI : 200 OK\n{ newAccessToken, newRefreshToken }
+
+@enduml

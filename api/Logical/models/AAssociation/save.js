@@ -12,7 +12,7 @@ module.exports = {
     },
 
     fn: function (obj, inputs, env) {
-        obj.owner.save();
+        obj.parenter.save();
         return obj;
     }
 };

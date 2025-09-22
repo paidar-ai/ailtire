@@ -1,0 +1,86 @@
+@startuml
+|Data Curator|
+start
+
+:Init;
+note right
+  • Description: Initial state for the workflow  
+  • Inputs: name, description  
+  • Policy: executeMode=wait, retryPolicy(3 tries, exp backoff)  
+  • ActionsMode: sequential  
+  • Action: CreateProjectRecord  
+  • Outputs: project  
+end note
+
+
+|Repository|
+if (Init succeeded?) then (yes)
+  :ValidateProject;
+  note right
+    • Description: Validate a project that has been created  
+    • Inputs: project  
+    • Triggers: Init.succeeded  
+    • Policy: executeMode=wait, retryPolicy(3 tries, exp backoff)  
+    • ActionsMode: sequential  
+    • Actions:
+      – CheckProjectDuplicationWorkflow (workflow)  
+      – RunValidation (activity)  
+      – UpdateProjectRecord (action)  
+    • Outputs: result  
+    • OnError: RollbackChanges  
+  end note
+
+  if (ValidateProject succeeded?) then (yes)
+    stop
+  else (no)
+    :RollbackChanges;
+    note right
+      • Description: Rollback all changes on validation failure
+      • Inputs: project, error
+      • Actions:
+        - DeleteProjectRecord
+        - CleanupResources
+      • Outputs: none
+    end note
+    stop
+  endif
+else (no)
+  stop
+endif
+
+stop
+@enduml
+
+@startuml
+title Create Project Workflow State Machine
+
+[*] --> Init
+
+state Init {
+  Init : onStart → “Init.started”
+  Init : onComplete → “Init.succeeded”
+  Init : onError → “Init.failed”
+}
+
+Init --> ValidateProject : Init.succeeded
+
+state ValidateProject {
+  ValidateProject : onStart → “ValidateProject.started”
+  ValidateProject : onComplete → “ValidateProject.succeeded”
+  ValidateProject : onError → “ValidateProject.failed”
+}
+
+ValidateProject --> [*] : ValidateProject.succeeded
+ValidateProject --> RollbackState : ValidateProject.failed
+
+state RollbackState {
+  RollbackState : onStart → "Rollback.started"
+  RollbackState : onComplete → "Rollback.completed"
+}
+
+RollbackState --> Error : Rollback.completed
+
+state Error {
+}
+
+@enduml

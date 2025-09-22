@@ -117,13 +117,13 @@ export function view3D(element, mode, parent) {
         }
         data.links.push({source: uid, target: action, value: 0.1});
         // Add the package for the action.
-        let package = action.package;
-        if (package) {
-            if (!data.nodes.hasOwnProperty(package.shortname)) {
-                data.nodes[package.shortname] = {
-                    id: package.shortname,
-                    name: package.name,
-                    color: package.color,
+        let pkg = action.package;
+        if (pkg) {
+            if (!data.nodes.hasOwnProperty(pkg.shortname)) {
+                data.nodes[pkg.shortname] = {
+                    id: pkg.shortname,
+                    name: pkg.name,
+                    color: pkg.color,
                     // view: APackage.view3D,
                     // rbox: {
                     //     parent: scenario.id,
@@ -134,7 +134,7 @@ export function view3D(element, mode, parent) {
                 };
             }
             if (!action.cls) {
-                data.links.push({source: action.name, target: package.shortname, value: 0.1});
+                data.links.push({source: action.name, target: pkg.shortname, value: 0.1});
             }
         }
         // Add the class if it is a class action.
@@ -151,7 +151,7 @@ export function view3D(element, mode, parent) {
                     //     fz: -300,
                     // }
                 };
-                data.links.push({source: cls, target: package.shortname, value: 0.1});
+                data.links.push({source: cls, target: pkg.shortname, value: 0.1});
             }
             data.links.push({target: cls, source: action.name, value: 0.1});
         }

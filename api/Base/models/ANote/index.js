@@ -19,6 +19,7 @@ class ANote {
         },
         associations: {
             items: {
+                unique: (obj) => { return obj.id; },
                 type: 'AItem',
                 cardinality: 'n',
                 composition: true,

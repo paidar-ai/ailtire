@@ -1,84 +1,112 @@
-<script>
-	import '../app.css';
-
-	let { children } = $props();
-
-    import { onMount } from "svelte";
-    import TreeView from "../components/TreeView.svelte";
-    import ArchitectureTreeView from "../components/ArchitectureTreeView.svelte";
-    import MetadataView from "../components/MetadataView.svelte";
-    import MainView from "../components/MainView.svelte";
-    import ClassList from "../components/ClassList.svelte";
-    import ExecutionStatus from "../components/ExecutionStatus.svelte";
-    import ResizableLayout from "../components/ResizableLayout.svelte";
-    import TopMenu from "../components/TopMenu.svelte";
-    import DetailView from "../components/DetailView.svelte";
-
-    import { selectedNode, theme } from "../stores/store.js";
-
-    onMount(() => {
-        document.documentElement.setAttribute("data-theme", $theme);
-    });
-
-    function changeTheme(newTheme) {
-        theme.set(newTheme);
-        document.documentElement.setAttribute("data-theme", newTheme);
-    }
-</script>
-
-<div class="flex flex-col h-screen w-full top-page">
-    <!-- HEADER -->
-    <header class="bg-primary text-white p-4 flex items-center justify-between header">
-        <h1 class="text-xl font-bold">Architecture Explorer</h1>
-        <select bind:value={$theme} onchange={(e) => changeTheme(e.target.value)}
-                class="select select-bordered">
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-            <option value="synthwave">Synthwave</option>
-            <option value="cyberpunk">Cyberpunk</option>
-            <option value="business">Business</option>
-            <option value="night">Night</option>
-        </select>
-    </header>
-    <main class="main-content">
-
-    <ResizableLayout
-            LeftPanel={{component: ArchitectureTreeView, props: {selectedNode}}}
-            ContentPanel={{component:MainView, props: {}}}
-            RightPanel={{component:ClassList, props: {}}}
-            BottomPanel={{component:ExecutionStatus, props: {}}}
-    />
-    </main>
-    <!-- FOOTER -->
-    <footer class="bg-base-200 p-2 text-center text-sm footer" >
-        <span>System Status: <strong>Online</strong></span>
-    </footer>
-</div>
-
 <style>
-    html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-    }
+    /* Header container using CSS Grid */
     .header {
-        height: 50px;
-        background-color: #000000;
-        display: flex;
+        display: grid;
+        grid-template-columns: auto 1fr 1fr; /* Menu area auto-sized, middle spacer, and right area flexed */
+        grid-template-areas: 
+            "menu spacer right"; /* Named zones for content */
+        align-items: center; /* Vertically center content */
+        height: 50px; /* Fixed header height */
+        width: 100%; /* Full width */
+        position: fixed; /* Keep header fixed at the top */
+        top: 0;
+        left: 0;
+        background-color: #456789; /* Background color */
+        color: white; /* Header text color */
+        padding: 0 20px; /* Add some inner padding */
+        z-index: 1000; /* Ensure it appears above other elements */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Shadow effect */
+        font-family: Arial, sans-serif; /* Consistent font */
     }
-    .footer {
-        height: 40px;
-        display: flex;
+
+    /* Menu Section Styles */
+    .header-menu {
+        grid-area: menu; /* Align to the grid 'menu' area */
+        display: flex; /* Use Flexbox for menu items */
+        gap: 2rem; /* Create more space between menu items */
+        flex-shrink: 0; /* Do not shrink the menu area */
     }
-    .top-page {
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        width: 100vw;
-        overflow: hidden;
+
+    /* Individual menu item styles */
+    .menu-item {
+        text-decoration: none; /* Remove links underline effect */
+        color: white; /* White text color for visibility */
+        font-weight: 500; /* Slightly bold menu text */
+        transition: color 0.3s ease; /* Smooth hover effect */
     }
+
+    .menu-item:hover {
+        color: #ffcc00; /* Highlight menu item on hover */
+    }
+
+    /* Title Section Styles */
+    .header-title {
+        grid-area: right; /* Align to the grid 'right' area */
+        text-align: right; /* Align content to the right */
+        font-size: 1.2rem; /* Larger font size for title */
+        font-weight: bold; 
+        /* Ensure title does not break or overflow */
+        white-space: nowrap; /* Don't allow the title to span multiple lines */
+        overflow: hidden; /* Clip content if it overflows */
+        text-overflow: ellipsis; /* Add ellipsis when content is clipped */
+    }
+
+    /* Dynamic Spacer Styles */
+    .header-spacer {
+        grid-area: spacer; /* This section flexibly uses remaining space */
+    }
+
+    /* Main content styling */
     .main-content {
         flex-grow: 1;
-        overflow: auto;
+        background: #123456;
+        overflow: auto; /* Enable scrolling */
+        padding: 50px 0px 40px; /* Allow for fixed header/footer */
+    }
+
+    /* Footer Styles */
+    .footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%; /* Full width */
+        background-color: #456789; /* Match the header's background */
+        color: white; /* Footer text color */
+        text-align: center; /* Center-align text */
+        height: 40px; /* Fixed footer height */
+        line-height: 40px; /* Vertically align text */
+        z-index: 1000; /* Stay above content */
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2); /* Shadow effect */
     }
 </style>
+
+<div class="flex flex-col h-screen w-full">
+    <!-- HEADER -->
+    <header class="header">
+        <!-- Menu Section -->
+        <div class="header-menu">
+            <a href="/" class="menu-item">Home</a>
+            <a href="/actors/AccountExec/Dashboard" class="menu-item">Customer</a>
+            <a href="/actors/PartnerExec/Dashboard" class="menu-item">Partners</a>
+            <a href="/actors/SolutionArchitect/Dashboard" class="menu-item">Architect</a>
+        </div>
+
+        <!-- Spacer -->
+        <div class="header-spacer"></div>
+
+        <!-- Title Section -->
+        <div class="header-title">
+            Ailtire Explorer
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <slot />
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        System Status: <strong>Online</strong>
+    </footer>
+</div>

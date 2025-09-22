@@ -102,7 +102,7 @@ export async function fetchDeployments() {
 export async function fetchEnvironments() {
     // usecases.update((state) => ({ ...state, isLoading: true, error: null }));
     try {
-        const res = await fetch(`${API_BASE_URL}/deployment/list`); // Replace with your API URL
+        const res = await fetch(`${API_BASE_URL}/ailtire/deployment/list`); // Replace with your API URL
         if (!res.ok) {
             throw new Error(`API Error: ${res.statusText}`);
         }
@@ -121,7 +121,7 @@ export async function fetchEnvironments() {
 export async function fetchPhysicals() {
     // usecases.update((state) => ({ ...state, isLoading: true, error: null }));
     try {
-        const res = await fetch(`${API_BASE_URL}/deployment/physical`); // Replace with your API URL
+        const res = await fetch(`${API_BASE_URL}/ailtire/deployment/physical`); // Replace with your API URL
         if (!res.ok) {
             throw new Error(`API Error: ${res.statusText}`);
         }

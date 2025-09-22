@@ -1,0 +1,1 @@
+module.exports = {"name":"architect","description":"Architect role","permissions":["actor/*"," model/*"," package/*"]}

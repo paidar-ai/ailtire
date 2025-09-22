@@ -1,7 +1,3 @@
-const path = require('path');
-const AEvent = require("../../../../src/Server/AEvent");
-const AFilter = require("yamljs");
-
 module.exports = {
     friendlyName: 'generate',
     description: 'Description of the method',
@@ -16,7 +12,7 @@ module.exports = {
             type: "string",
             description: "A list of filters to apply to the items, this is a comma separated list of filters. If no filtier is specified then all filters are used. ",
             required: false
-        }
+        },
     },
     outputs: {
             "type": "ANote",
@@ -41,25 +37,25 @@ module.exports = {
             filter = filter.trim().toLowerCase();
             switch (filter) {
                 case "actor":
-                    await obj.generateActors({prompt: prompt});
+                    await AActor.generate({note: obj, prompt: prompt});
                     break;
                 case "actionitem":
                     await obj.generateActionItems({prompt: prompt});
                     break;
                 case "model":
-                    await obj.generateModels({prompt: prompt});
+                    await AClass.generate({note: obj, prompt: prompt});
                     break;
                 case "package":
-                    await obj.generatePackages({prompt: prompt});
+                    await APackage.generate({note: obj, prompt: prompt});
                     break;
                 case "scenario":
-                    await obj.generateScenarios({prompt: prompt});
+                    await AScenario.generate({note: obj, prompt: prompt});
                     break;
                 case "usecase":
-                    await obj.generateUseCases({prompt: prompt});
+                    await AUseCase.generate({note: obj, prompt: prompt});
                     break;
                 case "workflow":
-                    await obj.generateWorkflows({prompt: prompt});
+                    await AWorkflow.generate({note: obj, prompt: prompt});
                     break;
                 default:
                     break;

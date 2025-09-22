@@ -14,8 +14,16 @@ class AActivity {
             onError: {type: 'json', description: 'Called when the Activity moves into an error state. Should follow this format: { description: "...", fn: (obj) => { ... }'},
             onStart: {type: 'json', description: 'Called when the Activity moves into a started state. Should follow this format: { description: "...", fn: (obj) => { ... }'},
             onComplete: {type: 'json', description: 'Called when the Activity moves into a finished state. Should follow this format: { description: "...", fn: (obj) => { ... }'},
+            actionsMode: {type: 'enum', description: 'How to handle actions: "parallel", "sequential"', values: ['parallel', 'sequential']},
         },
         associations: {
+            actor: {
+                type: 'AActor',
+                cardinality: 1,
+                composition: false,
+                owner: false,
+                description: 'Actor that owns this activity'
+            },
             policy: {
                 type: 'AActivityPolicy',
                 cardinality: 1,
@@ -23,7 +31,13 @@ class AActivity {
                 owner: true,
                 description: 'Retry/timeout/circuit-breaker & concurrency settings'
             },
-
+            triggers: {
+                type: 'ATrigger',
+                cardinality: 'n',
+                composition: true,
+                owner: true,
+                description: 'Triggers for this activity. When a trigger fires it is evaluated if true, the activity is started.'
+            },
             // now you can nest both simple Actions or other Activities
             actions: {
                 type: 'AExecutable',

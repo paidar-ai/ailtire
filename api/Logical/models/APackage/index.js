@@ -23,18 +23,26 @@ class APackage {
             uid: {
                 type: 'string',
                 description: "Unique ID for the package includes parent package uid."
+            },
+            dir: {
+                type: 'string',
+                description: "Directory of the package"
+            },
+            prefix: {
+                type: 'string',
+                description: "Prefix of the package"
             }
         },
         associations: {
             owner: {
-                type: 'APackage',
+                type: 'ref',
                 cardinality: '1',
                 composition: false,
                 owner: false,
                 transient: true,
             },
             classes: {
-                type: 'AClass',
+                type: 'ref',
                 unique: (obj) => { return obj.name; },
                 cardinality: 'n',
                 composition: true,

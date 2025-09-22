@@ -4,8 +4,8 @@ class AIHelper {
             let aiAdaptor = global.ailtire.ai.adaptor;
             if(aiAdaptor) {
                 try {
-                    if(ailtire.ai) {
-                        global.ai = new aiAdaptor(ailtire.ai);
+                    if(global.ailtire.ai) {
+                        global.ai = new aiAdaptor(global.ailtire.ai);
                         // this might need an await.
                         global.ai.init();
                     } else {
@@ -21,7 +21,74 @@ class AIHelper {
         return _ask(messages);
     }
     static async askForCode(messages) {
+        if(!global.ai) {
+            let aiAdaptor = global.ailtire.ai.adaptor;
+            if(aiAdaptor) {
+                try {
+                    if(global.ailtire.ai) {
+                        global.ai = new aiAdaptor(global.ailtire.ai);
+                        // this might need an await.
+                        global.ai.init();
+                    } else {
+                        return "";
+                    }
+                }
+                catch(e) {
+                    console.error("Error initializing AI:", e.message);
+                    return "";
+                }
+            }
+        }
         return _askForCode(messages);
+    }
+
+    static async chat(userText, session) {
+        const { userId, actorKey } = session;
+        const context = { userId, actorKey };
+
+        let user = AUser.get(userId);
+        let actor = AActor.get(actorKey);
+
+        // 1) Load history as moments
+        context.history = user.recentMoment({actor:actor});
+
+        // 2) Load Practices & Insights
+        context.practices = actor.practice();
+        context.insights  = user.getInsight({actor:actor});
+
+        // 3) Select the correct Guidance flow
+        const guidance = await user.getGuidance({actor: actor, context:context});
+
+        // 4) guidance.pre (inject persona, system prompts)
+        const promptForHints = guidance.pre
+            ? await guidance.pre(userText, context)
+            : userText;
+
+        // 5) Delegate to guidance.handle (runs hint pre/post, LLM, backend actions)
+        const { replyText, nextHints, actionsToTrigger, contextUpdates, feedback } =
+            await guidance.handle(promptForHints, context);
+
+        // 6) Record a Moment for this interaction
+        await AMoment.create({
+            user:    userId,
+            actor:   actorKey,
+            action:  'chat',
+            outcome: replyText,
+            prompt:  userText,
+            // context: { input: userText, ...contextUpdates }
+        });
+
+        // 7) Update Insights based on any feedback
+        if (feedback) {
+            await AInsight.updateFromFeedback(userId, actorKey, feedback);
+        }
+
+        // 8) Return structured result
+        return {
+            reply:       replyText,
+            suggestions: nextHints || [],
+            actions:     actionsToTrigger || []
+        };
     }
 }
 module.exports=AIHelper;
@@ -78,10 +145,15 @@ async function _askForCode(messages) {
 }
 async function _ask(messages) {
     if(global.ai) {
-        const content = await global.ai.chat({
-            messages: messages
-        });
-        return content;
+        try {
+            const content = await global.ai.chat({
+                messages: messages
+            });
+            return content;
+        }
+        catch(e) {
+            console.error("Calling OpenAI Error:", e.message);
+        }
     }
     return "";
 }

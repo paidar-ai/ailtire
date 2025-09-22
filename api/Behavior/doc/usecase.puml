@@ -1,0 +1,27 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "User" as U
+actor "Registrar\n<<Actor>>" as R
+
+rectangle "Ailtire • Behavior" {
+  (Execute Use Case) as UC
+  (Run Scenario) as SC
+  (Provide Feedback) as FB
+  (Request Guidance) as RG
+  (Aggregate Practice) as AP
+}
+
+U --> UC
+U --> SC
+U --> FB
+U --> RG
+
+R -- UC
+R -- RG
+
+FB ..> AP : feeds (via Insights)
+AP ..> RG : provides hints/defaults
+@enduml

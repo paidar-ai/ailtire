@@ -1,4 +1,3 @@
-const funcHandler = require("../../../../src/Proxy/MethodProxy");
 const path = require("node:path");
 
 module.exports = {

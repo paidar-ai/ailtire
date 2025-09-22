@@ -1,0 +1,41 @@
+@startuml
+actor User
+participant "Prompt Driver" as Driver
+participant "Guidance Module" as Guidance
+participant "LLM Service" as LLM
+participant "MCP Backend" as MCP
+participant "UI" as UI
+
+== User enters a prompt ==
+User -> Driver : submitPrompt(text)
+Driver -> Guidance : nextHints(context)
+Guidance --> Driver : [hint1, hint2, ...]
+Driver -> UI : showHints([hint1, hint2, ...])
+
+== User picks or edits hint ==
+User -> Driver : selectHintOrText(text)
+Driver -> Guidance : augmentPrompt(text, context)
+Guidance --> Driver : augmentedText
+
+== Send to LLM ==
+Driver -> LLM : ask(augmentedText)
+LLM --> Driver : llmResponse
+
+== Handle response ==
+Driver -> Guidance : handleResponse(llmResponse, context)
+Guidance --> Driver : { replyText, contextUpdates, actionsToTrigger }
+
+== Trigger backend actions ==
+alt actionsToTrigger not empty
+    Driver -> MCP : for each action in actionsToTrigger
+    MCP --> Driver : actionResult
+end
+
+== Update context & render ==
+Driver -> Driver : update context with contextUpdates
+Driver -> UI : display(replyText)
+Driver -> Guidance : nextHints(context)
+Guidance --> Driver : nextHints
+Driver -> UI : showHints(nextHints)
+
+@enduml

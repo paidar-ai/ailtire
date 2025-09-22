@@ -1,53 +1,65 @@
 const path = require('path');
-const Generator = require("../../../../src/Documentation/Generator");
-const obj = require("./get");
+const fs = require("fs");
 
 module.exports = {
     friendlyName: 'save',
     description: 'Save and actor to the directory',
-    static: false,
+    static: true,
     inputs: {
+        cls: {
+            description: 'Class to save',
+            type: 'AClass',
+            required: true
+        }
     },
 
-    exits: {
-    },
+    exits: {},
 
-    fn: function (obj, inputs, env) {
-        let name = obj.name;
+    fn: function (obj, env) {
+        let name = obj.definition.name;
+        obj = obj.definition;
         let nameNoSpace = name.replace(/ /g, '');
         obj.dir = obj.dir || path.resolve(obj.package.dir, nameNoSpace);
         let tempObj = {
-            name: obj.name,
+            name: name,
             description: obj.description,
         };
-        if(obj.extends) { tempObj.extends = obj.extends; }
-        if(obj.unique) { tempObj.unique = obj.unique; }
+        if (obj.extends) {
+            tempObj.extends = obj.extends;
+        }
+        if (obj.unique) {
+            tempObj.unique = obj.unique;
+        }
         tempObj.attributes = {};
-        for(let i in obj._attributes) {
-            let attr = obj._attributes[i];
-            let tempAttr = attr.toJSON();
-            tempObj.attributes[attr.name] = tempAttr;
+        for (let name in obj.attributes) {
+            let attr = obj.attributes[name];
+            let tempAttr = attr.saveJSON();
+            tempObj.attributes[name] = tempAttr;
         }
         tempObj.associations = {};
-        for(let i in obj._associations) {
-            let assoc = obj._associations[i];
-            let tempAssoc = assoc.toJSON();
-            tempObj[assoc.name] = tempAssoc;
+        for (let name in obj.associations) {
+            let assoc = obj.associations[name];
+            let tempAssoc = assoc.saveJSON();
+            tempObj.associations[name] = tempAssoc;
         }
         tempObj.statenet = {};
-        if(obj.statenet) {
-            tempObj.statenet = obj.statenet.toJSON();
+        if (obj.statenet) {
+            // Check if statenet is a proxy object
+            try {
+                tempObj.statenet = obj.statenet.toJSON();
+            } catch (e) {
+                tempObj.statenet = {};
+            }
         }
         let tempString = `
 class ${obj.name} {
-    static definition = ${JSON.stringify(tempObj)}
-    }
-};
-module.exports = ${obj.name}`;
-        let filename = path.resolve(tempObj.dir, 'index.js');
-        if(!fs.existsSync(filename)) {
+    static definition = ${JSON.stringify(tempObj, null, 2)}
+}
+module.exports = ${obj.name};`;
+        let filename = path.resolve(obj.dir, 'index.js');
+        if (!fs.existsSync(filename)) {
             // This is the first time it is being created.
-            fs.mkdirSync(obj.dir, { recursive: true });
+            fs.mkdirSync(obj.dir, {recursive: true});
             // Add the Default Class files.
         }
         fs.writeFileSync(filename, tempString);

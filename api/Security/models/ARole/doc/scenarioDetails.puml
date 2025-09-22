@@ -1,0 +1,60 @@
+@startuml
+title Token-Based Auth Flow Across CLI, Web, REST & MCP
+
+actor CLI_User as CLI
+actor Web_User as Web
+actor REST_Client as REST
+actor MCP_Client as MCP
+
+participant "AuthService" as Auth
+participant "TokenService" as Token
+participant "Gateway" as GW
+participant "AppService" as App
+
+== Authentication & Token Issuance ==
+CLI -> Auth : CLI: login(credentials)
+Web -> Auth : Web: POST /auth/login\n{ username, password }
+REST -> Auth : REST: POST /auth/login\n{ clientId, secret }
+MCP -> Auth : MCP: rpc.login({ token })
+Auth -> Token : issueTokens(userId, scopes)
+Token --> Auth : { accessToken, refreshToken }
+Auth --> CLI : { accessToken, refreshToken }
+Auth --> Web : { accessToken, refreshToken }
+Auth --> REST : { accessToken, refreshToken }
+Auth --> MCP : { accessToken, refreshToken }
+
+== Using Access Token ==
+CLI -> GW : CLI: runAction(params)\nAuthorization: Bearer <accessToken>
+Web -> GW : GET /api/data\nAuthorization: Bearer <accessToken>
+REST -> GW : GET /resource\nAuthorization: Bearer <accessToken>
+MCP -> GW : rpc.call({ method, params, token:<accessToken> })
+
+GW -> Token : validate(<accessToken>)
+Token --> GW : valid | invalid
+alt valid
+    GW -> App : forward(request, userContext)
+    App --> GW : response(data)
+    GW --> CLI : result
+    GW --> Web : 200 OK\n{ data }
+    GW --> REST : 200 OK\n{ data }
+    GW --> MCP : rpc.response({ result })
+else invalid
+    GW --> CLI : 401 Unauthorized
+    GW --> Web : 401 Unauthorized
+    GW --> REST : 401 Unauthorized
+    GW --> MCP : rpc.error({ code:401 })
+end
+
+== Token Refresh ==
+CLI -> Auth : CLI: refresh(refreshToken)
+Web -> Auth : POST /auth/refresh\n{ refreshToken }
+REST -> Auth : POST /auth/refresh\n{ refreshToken }
+MCP -> Auth : rpc.refresh({ refreshToken })
+Auth -> Token : rotateTokens(oldRefreshToken)
+Token --> Auth : { newAccessToken, newRefreshToken }
+Auth --> CLI : { newAccessToken, newRefreshToken }
+Auth --> Web : { newAccessToken, newRefreshToken }
+Auth --> REST : { newAccessToken, newRefreshToken }
+Auth --> MCP : { newAccessToken, newRefreshToken }
+
+@enduml

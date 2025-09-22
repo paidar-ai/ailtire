@@ -4,6 +4,10 @@ class AAssociation {
         name: 'AAssociation',
         description: 'This represents an association between to classes.',
         attributes: {
+            name: {
+                type: 'string',
+                description: 'Name of the association',
+            },
             type: {
                 type: 'string',
                 description: 'The Class of the association',
@@ -31,14 +35,17 @@ class AAssociation {
             description: {
                 type: 'string',
                 description: 'Description of the attribute',
-            }
+            },
+            items: {
+                type: 'json',
+                description: 'Items of the association',
+            },
+            parent: {
+                type: 'json',
+                description: "The owner of the association",
+            },
         },
         associations: {
-            owner: {
-                type: 'AClass',
-                description: "The owner of the relationship",
-                cardinality: "1",
-            },
         },
     }
 }

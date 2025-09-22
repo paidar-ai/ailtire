@@ -6,13 +6,21 @@ module.exports = {
         prompt: {
             description: 'Prompt used to generate architectural elements',
             type: 'string',
-            required: true
+            required: false
         },
         filters: {
-            description: 'Filters used to generate architectural elements',
+            description: 'Filters used to generate architectural elements, This is a comma separated list of filters.',
             type: 'string',
             required: false
+        },
+        id: {
+            description: 'The id of the note',
+            type: 'string',
         }
+    },
+    outputs: {
+       type: "ANote",
+       description: "Note created by the function call."
     },
 
     exits: {
@@ -21,9 +29,13 @@ module.exports = {
 
     fn: async function (inputs, env) {
         // Find the scenario from the usecase.
+        if(inputs.id) {
+            let note = ANote.find({id: inputs.id});
+            return await note.generateItems({filters: inputs.filters});
+        }
         let note = await ANote.construct({text: inputs.prompt});
 
-        let retval = await note.generateItems({filters: inputs.filters});
-        return retval;
+        await note.generateItems({prompt: inputs.prompt, filters: inputs.filters});
+        return note;
     }
 };

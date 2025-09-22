@@ -5,7 +5,7 @@ module.exports = {
     description: 'Reject the item to be generated',
     static: false, // True is for Class methods. False is for object based.
     inputs: {
-        "text": {
+        "reason": {
             "type": "string",
             "description": "Why the item was rejected.",
             "required": false
@@ -23,7 +23,7 @@ module.exports = {
 
     fn: function (obj, inputs, env) {
         let { text } = inputs;
-        obj.reason = text || "not specified";
+        obj.reason = reason || "not specified";
         return obj;
     }
 };

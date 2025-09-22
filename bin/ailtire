@@ -14,8 +14,9 @@ global.ailtire = {
 };
 let ailtireBaseDir = path.resolve(__dirname, '..');
 BootStrap.init(ailtireBaseDir);
-console.log(global.ailtire.baseDir);
-console.log(ailtireBaseDir);
+ARole.loadAll();
+AActor.loadAll({dir: path.resolve(ailtireBaseDir, "actors")});
+
 // If the working directory is the same as the ailtire then do not load the application.
 if(ailtireBaseDir !== global.ailtire.baseDir) {
     AApplication.load({dir: global.ailtire.baseDir});
