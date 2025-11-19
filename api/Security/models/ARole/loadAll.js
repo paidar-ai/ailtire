@@ -17,7 +17,7 @@ module.exports = {
   fn: function(inputs) {
     const roles = {};
 
-    let dir = inputs?.dir || path.resolve(ailtire.config?.baseDir || ailtire.baseDir, 'security', 'roles')
+    let dir = inputs?.dir || path.resolve(ailtire.config?.baseDir || ailtire.config;.baseDir, 'security', 'roles')
       fs.mkdirSync(dir, { recursive: true });
     for (const name of fs.readdirSync(dir)) {
         // check if the fname is a directory.

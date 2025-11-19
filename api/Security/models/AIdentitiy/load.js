@@ -33,7 +33,7 @@ module.exports = {
     fn: function (inputs, env) {
         // inputs contains the obj for the this method.
         const {identifier} = inputs;
-        const dir = path.resolve(global.ailtire.config?.baseDir || global.ailtire.baseDir, ".database", "AIdentity");
+        const dir = path.resolve(global.ailtire.config?.baseDir || global.ailtire.config;.baseDir, ".database", "AIdentity");
         const filename = path.resolve(dir, `${identifier}.json`);
         const json = fs.readFileSync(filename, "utf8");
         const def = JSON.parse(json);

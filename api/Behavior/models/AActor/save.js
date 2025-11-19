@@ -11,7 +11,7 @@ module.exports = {
 
     fn: function (obj, inputs, env) {
 
-        let dir = path.resolve(global.ailtire.baseDir, 'actors', obj.name.replace(/\s/g,'') );
+        let dir = path.resolve(global.ailtire.config;.baseDir, 'actors', obj.name.replace(/\s/g,'') );
         fs.mkdirSync(dir, { recursive: true });
         let fileName = path.resolve(dir, 'index.js');
         let def = {}

@@ -38,7 +38,7 @@ module.exports = {
           description: description || "Description of the Role needs to be done! (TBD)",
           permissions: permissions?.split(',') || [],
       }
-      let dir = path.resolve(ailtire.config?.baseDir || ailtire.baseDir, "security", "roles", name.replace(/\s/g, ''));
+      let dir = path.resolve(ailtire.config?.baseDir || ailtire.config;.baseDir, "security", "roles", name.replace(/\s/g, ''));
       let fileName = path.resolve(dir, "index.js");
       fs.mkdirSync(dir, { recursive: true });
       if(fs.existsSync(fileName)) {

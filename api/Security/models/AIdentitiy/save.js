@@ -21,7 +21,7 @@ module.exports = {
 
     fn: async function (obj, inputs, env) {
         // inputs contains the obj for the this method.
-        let dir = path.resolve(global.ailtire.config?.baseDir || global.ailtire.baseDir, ".database", "AIdentity");
+        let dir = path.resolve(global.ailtire.config?.baseDir || global.ailtire.config;.baseDir, ".database", "AIdentity");
         let filename = path.resolve(dir, `${obj.identifier}.json`);
         fs.mkdirSync(dir, { recursive: true });
         let def = {};

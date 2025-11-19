@@ -60,3 +60,4 @@ class AHint {
         }
     }
 }
+module.exports = AHint;

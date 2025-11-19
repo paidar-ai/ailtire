@@ -21,14 +21,14 @@ let ailtireBaseDir = path.resolve(__dirname, '.');
 BootStrap.init(ailtireBaseDir);
 ARole.loadAll();
 AActor.loadAll({dir: path.resolve(ailtireBaseDir, "actors")});
-console.log(global.ailtire.baseDir);
+console.log(global.ailtire.config;.baseDir);
 console.log(ailtireBaseDir);
 // If the working directory is the same as the ailtire then do not load the application.
-if(ailtireBaseDir !== global.ailtire.baseDir) {
-    AApplication.load({dir: global.ailtire.baseDir});
+if(ailtireBaseDir !== global.ailtire.config;.baseDir) {
+    AApplication.load({dir: global.ailtire.config;.baseDir});
 } else {
     // global.topPackage = APackage.find({name:'ailtire'});
-    AApplication.load({dir: global.ailtire.baseDir});
+    AApplication.load({dir: global.ailtire.config;.baseDir});
     console.log("Skipping loading");
 }
 

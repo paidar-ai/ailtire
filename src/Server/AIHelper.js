@@ -145,10 +145,13 @@ async function _askForCode(messages) {
 }
 async function _ask(messages) {
     if(global.ai) {
+        let context = _getContext();
+        context.add(messages);
         try {
             const content = await global.ai.chat({
-                messages: messages
+                messages: context
             });
+            _recordMoment({messages: messages, reply: content});
             return content;
         }
         catch(e) {
@@ -158,6 +161,42 @@ async function _ask(messages) {
     return "";
 }
 
+function _getContext() {
+    const { userId, actorKey } = session;
+    const context = { userId, actorKey };
+
+    let user = AUser.get(userId);
+    let actor = AActor.get(actorKey);
+
+    // 1) Load history as moments
+    context.history = user.recentMoments({actor:actor});
+
+    // 2) Load Practices & Insights
+    context.practices = actor.practice();
+    context.insights  = user.getInsight({actor:actor});
+    let messages = [ {
+        role: 'system',
+        content: `You are an assistant for ${user.name} which is taking on the role of ${actor.name}.
+        Helping ${user.name} you should follow the following best practices for the role. Use the following: 
+        ${context.practices}. Through your interactions you have developed the following insight about your 
+        job to support ${user.name}. Use these insights to help ${user.name} based on the user prompt. Here 
+        are the insights you have about your interactions: ${context.insights}. The latest interactions with 
+        ${user.name} include the following: ${context.history}. `
+    }];
+    return messages;
+
+}
+function _recordMoment({messages, reply, session}) {
+    const { userId, actorKey } = session;
+
+    new AMoment({
+        user:    userId,
+        actor:   actorKey,
+        action:  'ask',
+        outcome: reply,
+        prompt:  messages,
+    });
+}
 function _limitMessages(messages) {
     let totalLength = 0;
     let numOfMessages = 0;

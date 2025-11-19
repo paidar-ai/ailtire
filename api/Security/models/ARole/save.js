@@ -14,7 +14,7 @@ module.exports = {
 
     fn: function (inputs) {
         const def = obj._attributes;
-        let dir = obj.dir || path.resolve(ailtire.config.baseDir || ailtire.baseDir, "security", "roles", obj.name.replace(/ /g, ''));
+        let dir = obj.dir || path.resolve(ailtire.config.baseDir || ailtire.config;.baseDir, "security", "roles", obj.name.replace(/ /g, ''));
 
         fs.mkdirSync(dir, {recursive: true});
         const filePath = path.join(dir, `index.js`);

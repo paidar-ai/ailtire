@@ -2,14 +2,14 @@ const axios = require("axios");
 const AIAdaptor = require("./AIAdaptor");
 const execSync = require("child_process").execSync;
 
-class AOLlama extends AIAdaptor {
+class AOVMS extends AIAdaptor {
     constructor(config) {
         super();
         if (!config.url) {
             throw new Error("API URL is required to connect to the LLaMA server.");
         }
         this.apiUrl = config.url; // The server URL hosting the LLaMA model
-        this.model = config.model || 'llama3.2';
+        this.model = config.model || 'model0'
     }
 
     /**
@@ -21,17 +21,20 @@ class AOLlama extends AIAdaptor {
         console.log("Initializing LLaMA adaptor...");
 
         try {
-            await _startOLlama(this);
+            await _startOVMS(this);
             console.log("LLaMA Pulling model:", this.model);
-            let response = await axios.post(`${this.apiUrl}/api/pull`, {
-                model: this.model,
-            });
+            let response = await axios.get(`${this.apiUrl}/v1/config`);
             if (response.status === 200) {
                 console.log(`LLaMA model ${this.model} is up and ready.`);
-                return;
             } else {
                 throw new Error(`LLaMA server health check failed: ${response.statusText}`);
             }
+            response = await axios.post(`${this.apiUrl}/v1/completions`, {
+                model: this.model,
+                prompt: "Good Morning Hal!"
+            });
+           console.log(response.data);
+            return;
         } catch (error) {
             console.error("Error while connecting to the LLaMA server:", error.message || error);
             throw new Error("Failed to connect to the LLaMA API. Ensure the API URL is correct.");
@@ -44,7 +47,7 @@ class AOLlama extends AIAdaptor {
         }
         let model = opts.model || global.ailtire.config.ai.model || this.model;
         try {
-            const response = await axios.post(`${this.apiUrl}/api/generate`, {
+            const response = await axios.post(`${this.apiUrl}/v3/completions`, {
                 model: model,
                 prompt: opts.prompt,
             });
@@ -62,12 +65,12 @@ class AOLlama extends AIAdaptor {
 
     async chat(opts) {
         if (!this.apiUrl) {
-            throw new Error("LLaMA server URL is not set. Ensure the adaptor is configured correctly.");
+            throw new Error("OVMS server URL is not set. Ensure the adaptor is configured correctly.");
         }
 
         let model = opts.model || global.ailtire.config.ai.model || this.model;
         try {
-            const response = await axios.post(`${this.apiUrl}/api/chat`, {
+            const response = await axios.post(`${this.apiUrl}/v3/chat/completions`, {
                 // const response = await Ollama.generate({
                 raw: true,
                 stream: false,
@@ -89,17 +92,17 @@ class AOLlama extends AIAdaptor {
 
 const _sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function _startOLlama(obj) {
+async function _startOVMS(obj) {
     let completed = false;
     let timeout = 1000;
     while (!completed) {
         try {
-            console.log(`Checking OLlama accessibility at ${obj.apiUrl}/api/version`);
-            let response = await axios.get(`${obj.apiUrl}/api/version`);
-
+            console.log(`Checking OVMS accessibility at ${obj.apiUrl}/v1/config`);
+            let response = await axios.get(`${obj.apiUrl}/v1/config`);
+           
             if (response.status !== 200) {
-                console.log("Starting OLlamA server...");
-                const cmd = 'docker run -d --rm -v ollama:/root/.ollama -p 11434:11434 --name ailtire-aihelper madajaju/ailtire-aihelper:latest';
+                console.log("Starting OVMS server...");
+                const cmd = `docker run --device /dev/dxg -v c:/Users/darre/models:/models -p 9000:9000 -p 8000:8000 openvino/model_server:latest-gpu --model_path /models/model0 --model_name model0 --rest_port 8000 --port 9000 --target_device CPU`;
                 let results = await execSync(cmd);
                 console.log(results.toString());
                 await _sleep(timeout);
@@ -109,7 +112,7 @@ async function _startOLlama(obj) {
             }
         } catch(error) {
             console.log("Starting OLlamA server...");
-            const cmd = 'docker run -d --rm -v ollama:/root/.ollama -p 11434:11434 --name ailtire-aihelper madajaju/ailtire-aihelper:latest';
+            const cmd = `docker run --device /dev/dxg -v c:/Users/darre/models:/models -p 9000:9000 -p 8000:8000 openvino/model_server:latest-gpu --model_path /models/model0 --model_name model0 --rest_port 8000 --port 9000 --target_device CPU`;
             let results = await execSync(cmd);
             console.log(results.toString());
             await _sleep(timeout);
@@ -119,4 +122,4 @@ async function _startOLlama(obj) {
     return;
 }
 
-module.exports = AOLlama;
+module.exports = AOVMS;

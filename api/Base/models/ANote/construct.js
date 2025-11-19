@@ -38,7 +38,7 @@ module.exports = {
         // obj has the obj for the method.
         let note = new ANote(noteDef);
 
-        let filename = path.resolve(global.ailtire.baseDir, ".notes", note.id + ".js");
+        let filename = path.resolve(global.ailtire.config;.baseDir, ".notes", note.id + ".js");
         fs.writeFileSync(filename, `module.exports = ${JSON.stringify(noteDef, null, 2)};`);
 
         await note.generateSummary();
