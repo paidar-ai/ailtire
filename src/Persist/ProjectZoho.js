@@ -4,7 +4,7 @@ const querystring = require('querystring');
 const AAplication = require('../../src/Server/AApplication.js');
 const AIHelper = require('../../src/Server/AIHelper.js');
 
-class ProjecgtZoho extends ProjectManagementAbstract {
+class ProjectZoho extends ProjectManagementAbstract {
     static _instances = [];
 
     constructor(params) {
@@ -88,7 +88,7 @@ class ProjecgtZoho extends ProjectManagementAbstract {
         throw new Error("getTasks method must be implemented!");
     }
 }
-module.exports = ProjecgtZoho;
+module.exports = ProjectZoho;
 
 async function refreshAccessToken(clientId, clientSecret, refreshToken, tokenUrl) {
     try {

@@ -1,5 +1,6 @@
 const AIAdaptor = require("./AIAdaptor");
 const OpenAI = require("openai");
+const { toFile } = require('openai/uploads');
 
 class AOpenAI extends AIAdaptor {
     constructor(config) {
@@ -9,7 +10,7 @@ class AOpenAI extends AIAdaptor {
         }
         this.apiKey = config.apiKey;
         this.client = null;
-        this.model = config.model || 'gpt-4o-mini';
+        this.model = config.defaultModelName || 'gpt-4o-mini';
     }
 
     /**
@@ -24,15 +25,46 @@ class AOpenAI extends AIAdaptor {
         console.log("OpenAI client initialized successfully.");
     }
 
+    async voiceToText(opts) {
+        if (!this.client) {
+            throw new Error("OpenAI client is not initialized. Call init() first.");
+        }
+
+        // opts.audio should be a Buffer with the FULL concatenated audio
+        const buffer = opts.audio;
+        if (!Buffer.isBuffer(buffer)) {
+            throw new Error("opts.audio must be a Buffer (full audio file).");
+        }
+
+        console.log('Sending audio buffer length:', buffer.length);
+
+        // Optional quick sanity check: WebM magic bytes (0x1A 0x45 0xDF 0xA3)
+        const header = buffer.subarray(0, 4);
+
+        // Let File infer type from extension, or explicitly set audio/webm
+        const file = await toFile(buffer, 'audio.webm', { type: 'audio/webm' });
+
+        try {
+            const model = opts.model || 'gpt-4o-mini-transcribe';
+            const transcription = await this.client.audio.transcriptions.create({
+                file,
+                model,
+            });
+            return transcription.text;
+        } catch (error) {
+            console.error("Error during voice-to-text transcription:" );
+            return "";
+        }
+    }
     async generateText(opts) {
         if (!this.client) {
             throw new Error("OpenAI client is not initialized. Call init() first.");
         }
-        let model = opts.model || this.model;
+        let model = opts.model || global.ailtire.config.ai.model || this.model;
         if(!model) {
             model = this.model;
         }
-        
+
         try {
             const completion = await this.client.chat.completions.create({
                 model: model,
@@ -50,7 +82,7 @@ class AOpenAI extends AIAdaptor {
             throw new Error("OpenAI client is not initialized. Call init() first.");
         }
         let model = opts.model || this.model;
-        if(!model) { model = this.model;} 
+        if(!model) { model = this.model;}
         try {
             const completion = await this.client.chat.completions.create({
                 model: model,

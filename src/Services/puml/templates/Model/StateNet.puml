@@ -96,7 +96,7 @@ for(let name in model.statenet) {
 
     if(global.events.hasOwnProperty(ename)) {
         event = global.events[ename];
-        for(let pkg in event.handlers) {
+        for(let package in event.handlers) {
             let hs = event.handlers[pkg];
             for(let i in hs.handlers) {
                 let handler = hs.handlers[i];
@@ -104,7 +104,7 @@ for(let name in model.statenet) {
                 if(handler.hasOwnProperty('action')) {
                     action = `/${handler.action};`
                 } else {
-                    action = pkg + '/Function';
+                    action = package + '/Function';
                 }
                 estate = getStates(action);
  %>

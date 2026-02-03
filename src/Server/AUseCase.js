@@ -15,18 +15,18 @@ module.exports = {
         const APackage = require("./APackage");
         let ucObject = _getUseCase(usecase.name);
         if (!ucObject) {
-            let pkg = APackage.get(usecase.package);
-            if (!pkg) {
-                pkg = global.topPackage;
+            let package = APackage.get(usecase.package);
+            if (!package) {
+                package = global.topPackage;
             }
-            let ucdir = `${pkg.dir}/usecases/${usecase.name.replace(/\s/g, '')}`
+            let ucdir = `${package.dir}/usecases/${usecase.name.replace(/\s/g, '')}`
             usecase.dir = ucdir;
             _save(usecase);
-            AEvent.emit('usecase.created', usecase);
+            AEvent.emit({event:'usecase.created', data: usecase });
             return usecase;
         } else {
             _save(usecase);
-            AEvent.emit('usecase.updated', usecase);
+            AEvent.emit({event:'usecase.updated', data: usecase });
             return usecase;
         }
     },

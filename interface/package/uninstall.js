@@ -1,7 +1,5 @@
 const path = require('path');
 const exec = require('child_process').spawnSync;
-const sLoader = require('../../src/Server/Loader');
-const APackage = require('../../src/Server/APackage');
 
 module.exports = {
     friendlyName: 'uninstall',
@@ -34,6 +32,7 @@ module.exports = {
     },
 
     fn: function (inputs, env) {
+        const sLoader = require('../../src/Server/Loader');
         // goto the deploy directory at the top level.
         // Call docker stack deploy -c docker-compose.yml
         // Iterate down to the Packages the same thing.
@@ -42,8 +41,8 @@ module.exports = {
         let name = inputs.name;
         let apath = path.resolve('.');
         let topPackage = sLoader.processPackage(apath);
-        let pkg = APackage.getPackage(inputs.package);
-        unInstallPackage(pkg, {name: name});
+        let package = APackage.getPackage(inputs.package);
+        unInstallPackage(package, {name: name});
         return `Uninstall Package`;
     }
 };

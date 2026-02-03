@@ -3,18 +3,50 @@ const YAML = require('yamljs');
 const path = require('path');
 const Action = require('../Server/Action');
 const fs = require('fs');
+const os = require('os');
+const homeDir = os.homedir();
+const protocols = require('../security/protocols/index.js');
+const CLI_CONFIG_DIR = `${homeDir}/.ailtire`;
+const CLI_CRED_FILE   = `${CLI_CONFIG_DIR}/credentials.json`;
+
+// Helper to save tokens
+async function _saveCliTokens(tokens) {
+    if (!fs.existsSync(CLI_CONFIG_DIR)) {
+        fs.mkdirSync(CLI_CONFIG_DIR, {recursive: true});
+    }
+    fs.writeFileSync(CLI_CRED_FILE, JSON.stringify(tokens, null, 2));
+}
+
+// helper to load tokens & inject into env
+function _loadCliTokenEnv(env) {
+  if (fs.existsSync(CLI_CRED_FILE)) {
+    const {accessToken, refreshToken, expiresAt} =
+      JSON.parse(fs.readFileSync(CLI_CRED_FILE));
+    env.token      = accessToken;
+    env.refresh    = refreshToken;
+    env.expiresAt  = expiresAt;
+    global.currentIdentity = env;
+  }
+}
+
+const {command} = require("mocha/lib/cli/run");
+const readline = require("readline");
+const AIHelper = require("../Server/AIHelper");
 
 let baseDir = __dirname;
+let _commands = {};
+
 module.exports = {
-    execute: (binDir) => {
+    execute: async (binDir) => {
         let args = process.argv.slice(2);
         let fullPath = process.argv[1];
         let program = path.basename(fullPath);
         baseDir = binDir;
-        _executeCommand(program, args);
+        _normalizeInterface();
+        await _executeCommand(program, args);
     }
 }
-const _executeCommand = (program, args) => {
+const _executeCommand = async (program, args) => {
     let commands = [];
     while (args.length > 0) {
         if (args[0][0] === '-') {
@@ -24,7 +56,7 @@ const _executeCommand = (program, args) => {
         }
     }
     if (commands.length > 0) {
-        _runCommand(program, commands, args);
+        await _runCommand(program, commands, args);
     } else {
         if (args.includes('--version') || args.includes('-v')) {
             _helpVersion();
@@ -56,14 +88,8 @@ const _helpGetCommands = (program, topDir) => {
 }
 const _helpTopLevel = (program) => {
     let helpString = `Usage: ${program} [cmd]\n`;
-    helpString += _helpGetCommands(program, path.resolve(baseDir + '/../api/interface'));
-    helpString += _helpGetCommands(program, path.resolve(baseDir + '/.'));
-    helpString += '\n';
-    helpString += 'ailtire Extensions:\n';
-    if (program !== "ailtire") {
-        helpString += _helpGetCommands(program, path.resolve(baseDir + '/../node_modules/ailtire/interface'));
-    } else {
-        helpString += _helpGetCommands(program, path.resolve(baseDir + '/../interface'));
+    for (let i in _commands) {
+        helpString += `\t${i} [cmd] <args>\n`;
     }
     helpString += '\n';
     console.log(helpString);
@@ -80,42 +106,13 @@ function _existsDir(dir) {
     }
 }
 
-const _runCommand = (program, commands, args) => {
+const _runCommand = async (program, commands, args) => {
     // Find the command in the current directory.
     let action = _findAction(commands, args, baseDir);
     if (action) {
-        _executeAction(action, args);
+        await _executeAction(action, args);
         return;
     }
-    // Then look in the api directory for the application.
-    let topDir = path.resolve(baseDir + '/../api');
-    action = _findAction(commands, args, path.resolve(topDir, 'interface'));
-    if (action) {
-        _postAction(action, args);
-        return;
-    } else {
-        action = _searchAction(commands, args, path.resolve(`${topDir}`));
-        if (action) {
-            _postAction(action, args);
-            return;
-        }
-    }
-    // Now check the ailtire directory to see if there is something there.
-    if (program !== "ailtire") {
-        let ailtireDir = path.resolve(`${baseDir}/../node_modules/ailtire`);
-        action = _findAction(commands, args, path.resolve(ailtireDir, "interface"));
-        if (action) {
-            _executeAction(action, args);
-            return;
-        }
-    } else {
-        action = _findAction(commands, args, path.resolve(baseDir, "../interface"));
-        if (action) {
-            _executeAction(action, args);
-            return;
-        }
-    }
-    // Nothing hit so give the top level help.
     _helpTopLevel(program);
     return null;
 };
@@ -127,8 +124,8 @@ const _searchAction = (commands, args, topDir) => {
         for (let i in myDirs) {
             let dirname = path.resolve(`${topDir}/${myDirs[i]}`);
             if (fs.existsSync(path.resolve(`${dirname}/index.js`))) {
-                let pkg = require(path.resolve(`${dirname}/index.js`));
-                let name = pkg.shortname;
+                let package = require(path.resolve(`${dirname}/index.js`));
+                let name = package.shortname;
                 if (commands[0] === name) {
                     let newCommand = commands.slice(1);
                     if (newCommand.length === 0) {
@@ -151,9 +148,16 @@ const _searchAction = (commands, args, topDir) => {
 };
 
 const _helpCommand = (actionObj) => {
-    let errorString = `Usage: ${actionObj.fullName}\n`;
+    let fullName = actionObj.path.replaceAll(/\//g, ' ');
+    let errorString = `Usage: ${fullName}\n`;
+    errorString += `\t${actionObj.description}\n`;
     for (let iname in actionObj.inputs) {
-        errorString += ` --${iname} <${actionObj.inputs[iname].type}>\n\t\t${actionObj.inputs[iname].description}\n`;
+        if (actionObj.inputs[iname].required) {
+            errorString += ` --${iname} <${actionObj.inputs[iname].type}> (required) -  ${actionObj.inputs[iname].description}\n`;
+        } else {
+
+            errorString += `[--${iname} ${actionObj.inputs[iname].type}] (optional) - ${actionObj.inputs[iname].description}\n`;
+        }
     }
     console.error(errorString);
     process.exit(0);
@@ -176,11 +180,27 @@ const _getParameters = (args) => {
     }
     return params;
 }
-const _executeAction = (actionObj, args) => {
+const _executeAction = async (actionObj, args) => {
     // Create a map from the args
     let params = _getParameters(args);
     if (params.hasOwnProperty('help')) {
         _helpCommand(actionObj);
+        return;
+    }
+    if(actionObj.path !== '/ailtire/auth/login' && actionObj.path !== '/ailtire/auth/register') {
+        const env = {};
+        if(global.ailtire.config.authEnabled) {
+            _loadCliTokenEnv(env);
+            await protocols.authenticate(env);
+
+            // 3) run your framework’s authenticate() to populate env.user/env.actor
+            if (actionObj.path !== '/ailtire/auth/me') {
+                authorize(actionObj, env);
+            }
+        }
+    }
+    if(actionObj.path === '/ailtire/ai/chat') {
+        await aiChat(actionObj);
         return;
     }
 
@@ -212,7 +232,8 @@ const _executeAction = (actionObj, args) => {
         }
     }
     if (failed) {
-        let errorString = `Usage: ${actionObj.fullName.replace(/\//g, ' ')}\n`;
+        let fullName = actionObj.path.replaceAll(/\//g, ' ');
+        let errorString = `Usage: ${fullName}\n`;
         for (let iname in actionObj.inputs) {
             errorString += ` --${iname} <${actionObj.inputs[iname].type}>\n\t\t${actionObj.inputs[iname].description}\n`;
         }
@@ -220,18 +241,107 @@ const _executeAction = (actionObj, args) => {
         console.error("Command Failed!");
         process.exit(-1);
     } else {
-        Action.execute(actionObj, params).then((retval) =>
-        {
-            console.log(retval);
-        })
-        .catch((err) => {
-            console.error(err);
-        })
-        .finally(() => {
-            process.exit(0);
-        });
+        Action.execute(actionObj, params)
+            .then(async (retval) => {
+                console.log(retval);
+
+                // If this was the auth login or register command, capture tokens
+                if (actionObj.path === '/ailtire/auth/login' || actionObj.path === '/ailtire/auth/register') {
+                    try {
+                        // Expect retval to be JSON with { accessToken, refreshToken }
+                        const parsed = retval;
+                        const { accessToken, refreshToken, expiresIn } = parsed;
+                        if (accessToken && refreshToken) {
+                            // Optionally compute expiresAt for refresh logic
+                            const expiresAt = expiresIn
+                                ? Math.floor(Date.now() / 1000) + expiresIn
+                                : undefined;
+                            await _saveCliTokens({ accessToken, refreshToken, expiresAt });
+                            console.log('✅ CLI: tokens saved to', CLI_CRED_FILE);
+                        }
+                    } catch (e) {
+                        // ignore parse errors
+                    }
+                }
+            })
+            .catch((err) => {
+                console.error(err);
+            })
+            .finally(() => {
+                process.exit(0);
+            });
     }
+};
+
+const aiChat = async (actionObj) => {
+    if (!global.ailtire || !global.ailtire.ai) {
+        console.error('AI configuration is missing. Please check your configuration.');
+        process.exit(1);
+    }
+
+    console.log('Starting interactive AI session. Type "exit" or Ctrl+C to quit.\n');
+
+    return new Promise((resolve) => {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+            prompt: '> '
+        });
+
+        // maintain a simple conversation history
+        const history = [
+            {role: 'system', content: 'You are AI Assistant. Respond concisely.'}
+        ];
+
+        rl.prompt();
+        rl.on('line', async (line) => {
+            const text = line.trim();
+            let answer;
+            if (!text || text.toLowerCase() === 'exit') {
+                rl.close();
+                return;
+            }
+
+            // push user query
+            try {
+                answer = await actionObj.fn({prompt: text});
+
+                if (!answer) {
+                    console.log('No response from AI. Please check your configuration.');
+                    rl.prompt();
+                    return;
+                }
+            } catch (err) {
+                console.error('Error communicating with AI:', err);
+                rl.prompt();
+                return;
+            }
+
+            // print and push assistant response
+            console.log('\n' + answer + '\n');
+            history.push({role: 'assistant', content: answer});
+
+            rl.prompt();
+        }).on('close', () => {
+            console.log('Goodbye!');
+            resolve();  // Resolve the promise when readline closes
+        });
+    });
 }
+
+const authorize = (action, env) => {
+    const key   = action.permissionKey || action.path;
+    const perms = env.actor.permissions;        // merged permissions from all their actors’ roles
+
+    const allowed = perms.some(pat => {
+        if (pat === '*') return true;
+        return minimatch(key, pat);
+    });
+
+    if (!allowed) {
+        throw new AppError.Forbidden(`Missing permission: ${key}`);
+    }
+};
 const _postAction = (action, args) => {
     // Try and load the .ailtire.js file into the config.
     let ailtireFile = path.resolve(baseDir + '/../.ailtire.js');
@@ -301,49 +411,66 @@ const _helpVersion = () => {
     process.exit(0);
 }
 const _findAction = (commands, args, topDir) => {
-    let bin = "";
-    let i = 0;
-    let testString = topDir;
-    let dirOnly = false;
-    while (i < commands.length) {
-        testString += "/" + commands[i];
-        testString = path.resolve(testString);
-        i++;
-        if (_existsDir(testString)) {
-            bin = testString;
-            dirOnly = true;
-        } else if (fs.existsSync(testString)) {
-            bin = testString;
-            dirOnly = false;
-        } else if (fs.existsSync(testString + '.js')) {
-            bin = testString + '.js';
-            dirOnly = false;
-        } else if (fs.existsSync(testString + '.ts')) {
-            bin = testString + '.ts';
-            dirOnly = false;
-        } else if (fs.existsSync(testString + '/index.js')) {
-            bin = path.resolve(testString + '/index.js');
-            dirOnly = false;
+
+    let retval = null;
+    let current = _commands;
+    let found = false;
+    for (let i in commands) {
+        let command = commands[i];
+        if (current.hasOwnProperty(command)) {
+            current = current[command]
+            found = true;
+        } else {
+            found = false;
+            break;
         }
     }
-    if (dirOnly) {
-        let myCommand = commands.shift();
-        console.log(`Could not find the command: ${commands.join(" ")}\n`);
-        _helpCommandGroup(myCommand, bin);
-    } else if (bin.length > 0) {
-        const actionObj = require(bin);
-        actionObj.fullName = commands.join(' ');
-        return actionObj;
+    if (!found) {
+        return null;
     }
+    if (current.inputs) {
+        return current;
+    }
+    // This is a group of acctions.
+    _helpCommandGroup(commands, current);
     return null;
 };
-const _helpCommandGroup = (program, topDir) => {
-    if (!fs.existsSync(topDir)) {
-        console.error("Could not find the command!");
-        return;
+const _helpCommandGroup = (commands, group) => {
+    let helpString = `Usage: ${commands.join(' ')} [cmd]\n`;
+    for (let i in group) {
+        let action = group[i];
+        let params = '';
+        if (action.inputs) {
+            for (let iname in action.inputs) {
+                if (action.inputs[iname].required) {
+                    params += `--${iname}=<${action.inputs[iname].type}> `
+                } else {
+                    params += `[--${iname}=${action.inputs[iname].type}] `
+                }
+            }
+        }
+        helpString += `\t${action.name.replace(/\//g, ' ')} ${i} ${params}\n`;
+        helpString += `\t\t${action.description}\n`;
     }
-    let helpString = `Usage: ${program} [cmd]\n`;
-    helpString += _helpGetCommands(program, topDir);
     console.log(helpString);
     process.exit(0);
+}
+const _normalizeInterface = () => {
+
+    let interfaces = global.interface;
+    for (let i in interfaces) {
+        let interface = interfaces[i];
+        let paths = interface.path.split('/');
+        current = _commands;
+        for (let i = 2; i < paths.length; i++) {
+            let path = paths[i];
+            if (!current.hasOwnProperty(path)) {
+                current[path] = {};
+            }
+            if (i === paths.length - 1) {
+                current[path] = interface;
+            }
+            current = current[path];
+        }
+    }
 }

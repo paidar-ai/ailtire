@@ -5,13 +5,13 @@ let pkgs = {};
 let spkgs = package.subpackages;
 
 for(let i in package.depends) {
-    let dpkg = package.depends[i];
+    let dpackage = package.depends[i];
     if(spkgs) {
-        if(!spkgs.hasOwnProperty(dpkg.shortname)) {
-            pkgs[dpkg.shortname] = {name: dpkg.name, color:dpkg.color, classes:{}};
+        if(!spkgs.hasOwnProperty(dpackage.shortname)) {
+            pkgs[dpackage.shortname] = {name: dpackage.name, color:dpackage.color, classes:{}};
         }
     } else {
-        pkgs[dpkg.shortname] = {name: dpkg.name, color:dpkg.color, classes:{}};
+        pkgs[dpackage.shortname] = {name: dpackage.name, color:dpackage.color, classes:{}};
     }
 }
 for(let cname in package.classes) {
@@ -21,27 +21,27 @@ for(let cname in package.classes) {
         let atype = assoc.type;
         let aclass = global.classes[atype];
         if(aclass) {
-            let pkg = aclass.package;
+            let package = aclass.package;
             if(spkgs) {
-                if(!spkgs.hasOwnProperty(pkg.shortname)) {
-                    if(!pkgs.hasOwnProperty(pkg.shortname)) {
-                        pkgs[pkg.shortname] = {name: pkg.name, color: pkg.color, classes:{}};
+                if(!spkgs.hasOwnProperty(package.shortname)) {
+                    if(!pkgs.hasOwnProperty(package.shortname)) {
+                        pkgs[package.shortname] = {name: package.name, color: package.color, classes:{}};
                     }
-                    pkgs[pkg.shortname].classes[atype] = 1;
+                    pkgs[package.shortname].classes[atype] = 1;
                 }
             } else {
-                if(!pkgs.hasOwnProperty(pkg.shortname)) {
-                    pkgs[pkg.shortname] = {name: pkg.name, color: pkg.color, classes:{}};
+                if(!pkgs.hasOwnProperty(package.shortname)) {
+                    pkgs[package.shortname] = {name: package.name, color: package.color, classes:{}};
                 }
-                pkgs[pkg.shortname].classes[atype] = 1;
+                pkgs[package.shortname].classes[atype] = 1;
             }
         }
     }
 }
 for(let pname in pkgs) {
-    let pkg = pkgs[pname];
+    let package = pkgs[pname];
 %>
-package "<%= pkg.name %>" #<%= pkg.color.replace('#','') %> {
+package "<%= package.name %>" #<%= package.color.replace('#','') %> {
 
 }
 <% } %>
@@ -74,17 +74,17 @@ WebSocket -left- i: events >
 package "<%= package.name %>" #<%= package.color.replace('#','') %> {
 
 <% for(let spname in package.subpackages) {
-    let pkg = package.subpackages[spname];
+    let package = package.subpackages[spname];
 %>
-rectangle "<%= pkg.name %>" #white {
+rectangle "<%= package.name %>" #white {
 }
 <% } -%>
 <% for(let spname in package.subpackages) {
-    let spkg = package.subpackages[spname];
-    for(let i in spkg.depends) {
-    let dpkg = spkg.depends[i];
+    let spackage = package.subpackages[spname];
+    for(let i in spackage.depends) {
+    let dpackage = spackage.depends[i];
     %>
-    "<%= spkg.name %>" --> "<%= dpkg.name %>"
+    "<%= spackage.name %>" --> "<%= dpackage.name %>"
     <%
     }
 }
@@ -92,9 +92,9 @@ rectangle "<%= pkg.name %>" #white {
 }
 
 <% for(let i in package.depends) {
-    let dpkg = package.depends[i];
+    let dpackage = package.depends[i];
     %>
-    "<%= dpkg.name %>" <-- "<%= package.name %>"
+    "<%= dpackage.name %>" <-- "<%= package.name %>"
 <% } %>
 
 @enduml

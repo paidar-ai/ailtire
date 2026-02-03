@@ -1,0 +1,28 @@
+{
+  "id": "AInsight3",
+  "scopeKey": "global:default",
+  "insightType": "preference",
+  "subjectKey": "response.verbosity",
+  "status": "active",
+  "valueKey": "",
+  "statement": "The preference for concise descriptions versus lengthy ones is indicated.",
+  "rationale": "The assistant explicitly states a limit to verbosity in its response.",
+  "confidence": 0.9,
+  "priority": 3,
+  "sources": [
+    {
+      "momentId": "AMoment3",
+      "ts": "2025-12-13T18:18:45.126Z"
+    },
+    {
+      "momentId": "AMoment3",
+      "ts": "2025-12-13T18:18:45.126Z"
+    }
+  ],
+  "lastUpdated": "2025-12-13T18:18:54.378Z",
+  "updatedAt": "2025-12-13T18:18:54.378Z",
+  "lastEvidence": {
+    "source": "assistant",
+    "quote": "I'm unable to provide 500 words for each description."
+  }
+}

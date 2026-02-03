@@ -1,0 +1,121 @@
+security/
+    ├── policies/            # Fine‐grained resource/action policies
+    │   ├── devicePolicy.js
+    │   └── userPolicy.js
+    │
+    ├── protocols/           # Per‐protocol authentication rules
+    │   ├── rest.js
+    │   ├── mcp.js
+    │   └── cli.js
+    │
+    ├── roles/               # Role definitions (auto‐discovered)
+    │   ├── admin/
+    │   │   └── index.js     # exports { name, permissions: [...] }
+    │   ├── manager/
+    │   │   └── index.js
+    │   └── guest/
+    │       └── index.js
+
+
+
+Example of a APolicy definition.
+
+module.exports = {
+    name: 'devicePolicy',
+    description: 'Policy for device',
+    appliesTo: [
+        'device/create',
+        'device/delete'
+    ]
+    rules: [
+        {
+            name: "admin",
+            description: 'Admin can do anything',
+            fn: (actor,action,resource) => {
+                if (actor.role === 'admin') {
+                    return true;
+                }
+                return false;
+            }
+        },
+        {
+            name: "owner",
+            description: 'Owner can do anything',
+            fn: (actor,action,resource) => {
+                if (actor === resource.owner)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+    ]
+}
+# Security Concepts
+
+## 1. AIdentity
+An **AIdentity** represents an authenticated and authorized principal in the system.
+It encapsulates:
+- **Credentials**: How the user proved their identity (e.g. session token, API key).
+- **Actors**: One or more runtime personas (see next).
+
+### Why AIdentity?
+- Centralizes authentication details.
+- Provides a single entry point for authorization and context enrichment.
+
+---
+
+## 2. Actor
+An **Actor** is a persona tied to an AIdentity.
+Each actor:
+- Operates under a specific **context** (e.g. “project manager”, “device owner”).
+- Carries **enrichment data** relevant to its domain (e.g. user preferences, locale, UI shortcuts).
+
+### Actor vs. AIdentity
+- AIdentity = **who** you are (credentials + global metadata).
+- Actor     = **how** you act (domain context + enriched features).
+
+---
+
+## 3. Role
+A **Role** is a named collection of permissions.
+Roles are auto-discovered (e.g. under `security/roles/`), each exporting:
+
+module.exports = { name: 'manager', description: 'Project manager with elevated privileges', permissions:    }
+
+### Roles ↔ Actors
+- An Actor holds one or more Roles.
+- During authorization, the system checks if any of the actor’s roles grant the requested permission.
+
+---
+
+## 4. Policies
+Policies encode fine-grained business rules. They live in `security/policies/` and export:
+- `appliesTo`: list of actions/resources they guard.
+- `rules`: array of `{ name, description, fn(actor, action, resource) }`.
+
+Example:
+
+module.exports = { name: 'devicePolicy', description: 'Rules for creating/deleting devices', appliesTo: ['device/create', 'device/delete'], rules: }
+
+
+---
+
+## 5. Enrichment & UI Best-Practices
+Once an Actor is identified, you can enrich its session with:
+- **Context data**: e.g., list of projects, default organization, feature flags.
+- **UI hints**: e.g., preferred language, theme, keyboard shortcuts, best-practice recommendations.
+
+### Example Flow
+1. **Authenticate** → create AIdentity.
+2. **Map** AIdentity → Actor(s) (e.g. user + service actor).
+3. **Load** Roles and Permissions for each Actor.
+4. **Authorize** request via Policies & Roles.
+5. **Enrich** UI: surface shortcuts, workflows, and recommendations specific to the Actor’s domain.
+
+---
+
+By structuring your security layer around **AIdentity**, **Actor**, and **Role**, you achieve:
+- Clear separation of authn/authz concerns.
+- Scalable, fine-grained policy enforcement.
+- Seamless UI customization and best-practice guidance per user context.

@@ -37,7 +37,7 @@ module.exports = {
         for(let i in actor.workflows) {
             let workflow = actor.workflows[i];
             let wname = workflow.name.replace(/\s/g,'');
-            let package = APackage.getPackage(workflow.pkg);
+            let package = APackage.getPackage(workflow.package);
             let packageName = package.name.replace(/\s/g, '');
             if (!apackages.hasOwnProperty(packageName)) {
                 apackages[packageName] = {
@@ -59,7 +59,7 @@ module.exports = {
     },
     scenario: async (usecase, scenario, diagram) => {
         const Action = require('../Server/Action');
-        let pkg = global.packages[usecase.package.replace(/\s/g, '')];
+        let package = global.packages[usecase.package.replace(/\s/g, '')];
         let pkgs = {};
         for (let i in scenario.steps) {
             let step = scenario.steps[i];
@@ -67,34 +67,34 @@ module.exports = {
             let act = Action.find(`/${step.action.toLowerCase()}`);
             if (act) {
                 step.act = act;
-                let pkgName = act.pkg;
+                let pkgName = act.package;
                 if(typeof pkgName !== 'string') {
-                    pkgName = act.pkg.shortname;
+                    pkgName = act.package.shortname;
                 }
-                let pkg = APackage.getPackage(pkgName);
+                let package = APackage.getPackage(pkgName);
                 if (!pkgs.hasOwnProperty(pkgName)) {
                     let pkgJSON = {
-                        name: pkg.name,
-                        color: pkg.color,
-                        shortname: pkg.shortname,
-                        description: pkg.description,
+                        name: package.name,
+                        color: package.color,
+                        shortname: package.shortname,
+                        description: package.description,
                     };
                     pkgs[pkgName] = {
-                        pkg: pkgJSON,
+                        package: pkgJSON,
                         models: {}
                     }
                 }
                 if (act.cls) {
                     let name = act.cls.toLowerCase();
-                    pkgs[act.pkg.shortname].models[name] = name;
+                    pkgs[act.package.shortname].models[name] = name;
                 }
             }
             else {
                 console.error("Could not find the action:", step.action.toLowerCase());
             }
         }
-        let pkgJSON = pkg.toJSON();
-        let results = await AService.call('puml/scenario', {usecase:usecase, scenario: scenario, pkg:pkgJSON, pkgs:pkgs, diagram: diagram});
+        let pkgJSON = package.toJSON();
+        let results = await AService.call('puml/scenario', {usecase:usecase, scenario: scenario, package:pkgJSON, pkgs:pkgs, diagram: diagram});
         return results;
     },
     workflow: async (workflow, diagram) => {

@@ -1,0 +1,1 @@
+module.exports = {"name":"Lead Architect","description":"Description of the Role needs to be done! (TBD)","permissions":[]}

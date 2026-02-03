@@ -1,0 +1,1 @@
+module.exports = {"name":"administrator","description":"Administrator Role","permissions":["*"]}

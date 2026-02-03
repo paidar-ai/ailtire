@@ -1,0 +1,87 @@
+---
+layout: default
+title: Class <%- model.name %>
+permalink: class-<%= model.name.replace(/\s/, '') %>
+parent: Classes
+---
+
+# <%- model.name %>
+
+<%= model.description %>
+
+![Logical Diagram](./logical.png)
+
+## Attributes
+
+<% for(let i in model.attributes) {
+    let attribute = model.attributes[i];
+-%>
+* <%= i %>:<%= attribute.type %> - <%= attribute.description %>
+<% } %>
+
+## Associations
+<% if(model.associations && Object.keys(model.associations).length > 0) { %>
+| Name | Cardinality | Class | Composition | Owner | Description |
+| --- | --- | --- | --- | --- | --- |
+<% for(let aname in model.associations) {
+    let assoc = model.associations[aname];
+-%>
+| <%= aname %> | <%= assoc.cardinality %> | <%= assoc.type %> | <%= assoc.composition %> | <%= assoc.owner %> | <%= assoc.description %> |
+<% }  
+} else { %>
+No associations
+<% } %>
+
+<% if (model.dependant && Object.keys(model.dependant).length > 0) { %>
+## Users of the Model
+
+| Name | Cardinality | Class | Composition | Owner | Description |
+| --- | --- | --- | --- | --- | --- |
+<% for(let aname in model.dependant) {
+let assoc = model.dependant[aname].assoc;
+let cls = model.dependant[aname].model;
+-%>
+| <%= assoc.name %> | <%= assoc.cardinality %> | <%= cls.name %> | <%= assoc.composition %> | <%= assoc.owner %> | <%= assoc.description %> |
+<% } 
+} %>
+
+<% if(model.statenet) {
+%>
+## State Net
+The <%= model.name %> has a state net corresponding to instances of the class. Each state transistion will emit an 
+event that can be caught with a websocket client. The name of the event is the name of the state in all lower case.
+The following diagram is the state net for this class.
+
+![State Net Diagram](./statenet.png)
+
+| Name | Description | Events |
+| --- | --- | --- |
+<% for(let name in model.statenet) {
+    let state = model.statenet[name];
+    let eventNames = "";
+    for(let stateName in state.events) {
+        let newState = Object.keys(state.events[stateName]);
+        eventNames += stateName + '->' + newState[0] + ', ';
+    }
+-%>
+| <%= name %> | <%= state.description %> | <%= eventNames %> |
+<% }
+}%>
+
+
+## Methods
+<%
+    for(let mname in model.methods) {
+        let method = model.methods[mname];
+-%>
+* [<%= mname %>() - <%= method.description %>](#action-<%= mname.replace(/\//g,'-') %>)
+<% } %>
+
+## Method Details
+    <% for(let mname in model.methods) {
+        let method = model.methods[mname];
+        method.name = model.name.toLowerCase() + '/' + mname;
+%>
+<%- partial("./templates/Action/index.emd", {action: method}) %>
+<% } %>
+

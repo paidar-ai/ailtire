@@ -1,0 +1,45 @@
+@startuml
+title Guidance-Driven Workflow Orchestration (Activity Diagram)
+
+start
+
+:Create ATeam;
+:Attach Toolbox (AToolBox);
+:Add Team Members (ATeamMember);
+:Add Resources (AResource);
+:Add Guidance + Hints (AGuidance/AHint);
+
+partition "Orchestrator" {
+  :Wait for Trigger;
+  if (Trigger Fired?) then (yes)
+    :Select Guidance by Scope/Team;
+    :Generate Workflow from Guidance + Toolbox + Resources;
+    :Create Workflow Instance;
+  else (no)
+    :Idle;
+  endif
+}
+
+partition "Workflow Execution" {
+  :Iterate Steps;
+  if (Step requires Human?) then (yes)
+    :Create Task/Activity;
+    :Notify Human (channels);
+    :Collect Input;
+    :Store AMoment;
+    :Update State;
+  else (no)
+    :Run Tool via Toolbox;
+    :Store Outputs;
+    :Update State;
+  endif
+
+  if (More Steps?) then (yes)
+    :Next Step;
+  else (no)
+    :Complete Workflow;
+  endif
+}
+
+stop
+@enduml

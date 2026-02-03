@@ -20,17 +20,17 @@ module.exports = {
 
     fn: function (inputs, env) {
         try {
-            let pkg = APackage.getPackage(inputs.id);
+            let package = APackage.getPackage(inputs.id);
             for(let fname in inputs) {
                 if(fname === 'document') {
                     // find the document directory and store the contents.
-                    let cfile = path.resolve(`${pkg.doc.basedir}/doc.emd`);
+                    let cfile = path.resolve(`${package.doc.basedir}/doc.emd`);
                     fs.writeFileSync(cfile, inputs[fname]);
                 } else {
                     pkg[fname] = inputs[fname];
                 }
             }
-            APackage.save(pkg);
+            APackage.save(package);
         }
         catch(e) {
             console.error(e);

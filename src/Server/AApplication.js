@@ -77,10 +77,10 @@ async function _generateSummary(notes) {
         }
         chunks[chunkIndex] += notesArray[i] + '\n';
     }
-    AEvent.emit("note.summary.started", { message: "Generating Summary from Notes"});
+    AEvent.emit({event:"note.summary.started", data: { message: "Generating Summary from Notes"} });
     let summaries = [];
     for(let i in chunks) {
-        AEvent.emit("note.summary.inprogress", { message: `Finding Action Items from Notes: ${(i/chunks.length)*100}%`});
+        AEvent.emit({event:"note.summary.inprogress", data: { message: `Finding Action Items from Notes: ${(i/chunks.length)*100}%`} });
         let messages = [];
         messages.push({
             role: "system",
@@ -103,7 +103,7 @@ async function _generateSummary(notes) {
         summary = summaries[0];
     }
     notes.summary = summary;
-    AEvent.emit("note.summary.completed", {obj: { id: notes.id, summary: summary}});
+    AEvent.emit({event:"note.summary.completed", {obj: { id: notes.id, data: summary: summary}} });
     notes.save();
 }
 
@@ -130,10 +130,10 @@ async function _generateActionItems(notes) {
         dueDate: "When should the action item be completed.",
     }
     `
-    AEvent.emit("generate.actionItems.started", { message: "Generating Action Items from Notes"});
+    AEvent.emit({event:"generate.actionItems.started", data: { message: "Generating Action Items from Notes"} });
     let actionItemList = [];
     for(let i in chunks) {
-        AEvent.emit("generate.actionItems.inprogress", { message: `Finding Action Items from Notes: ${(i/chunks.length)*100}%`});
+        AEvent.emit({event:"generate.actionItems.inprogress", data: { message: `Finding Action Items from Notes: ${(i/chunks.length)*100}%`} });
         let messages = [];
         messages.push({
             role: "system",
@@ -155,14 +155,14 @@ async function _generateActionItems(notes) {
     messages.push({ role:'system',content: `Use the following json format: ${actionItemFormat}`});
     messages.push({ role:'user',content: `Here is the list of actionItems: ${JSON.stringify(actionItemList)}`});
 
-    AEvent.emit("generate.actionItems.inprogress", { message: `Finding Action Items from Notes: 90%`});
+    AEvent.emit({event:"generate.actionItems.inprogress", data: { message: `Finding Action Items from Notes: 90%`} });
     
     let actionItems = await AIHelper.askForCode(messages);
     for(let i in actionItems) {
         notes.addItem('AActionItem', actionItems[i]);
     }
      */
-    AEvent.emit("generate.actionItems.completed", {message: `Generating ${notes.items.length} ActionItems from Notes`});
+    AEvent.emit({event:"generate.actionItems.completed", data: {message: `Generating ${notes.items.length} ActionItems from Notes`} });
     notes.save();
 }
 
@@ -179,9 +179,9 @@ function _getPackage(pkgName) {
     }
     // Now check the short name
     for (let name in global.packages) {
-        let pkg = global.packages[name];
-        if (pkg.shortname === pkgName) {
-            return pkg;
+        let package = global.packages[name];
+        if (package.shortname === pkgName) {
+            return package;
         }
     }
     throw new Error("Package Not Found:" + pkgName);
@@ -189,7 +189,7 @@ function _getPackage(pkgName) {
 
 async function _generateScenarios(notes) {
     let package = global.topPackage;
-    AEvent.emit("generate.scenarios.started", {message: `Generating Scenarios from Notes`});
+    AEvent.emit({event:"generate.scenarios.started", data: {message: `Generating Scenarios from Notes`} });
     let pjson = JSON.stringify(package);
     let ajson = JSON.stringify(AActor.toPrompt(global.actors));
     let ujson = JSON.stringify(AUseCase.toPrompt(global.usecases));
@@ -222,7 +222,7 @@ async function _generateScenarios(notes) {
         let scenario = scenarios[i];
         notes.addItem('AScenario', scenario);
     }
-    AEvent.emit("generate.scenarios.completed", {message: `Generating ${scenarios.length} Scenarios from Notes`});
+    AEvent.emit({event:"generate.scenarios.completed", data: {message: `Generating ${scenarios.length} Scenarios from Notes`} });
     notes.save();
 }
 
@@ -231,7 +231,7 @@ async function _generateActors(notes) {
     let pjson = JSON.stringify(package.toJSON());
     let ajson = JSON.stringify(AActor.toPrompt(global.actors));
     let messages = [];
-    AEvent.emit("generate.started", {message: "Generating Actors from Notes"});
+    AEvent.emit({event:"generate.started", data: {message: "Generating Actors from Notes"} });
     messages.push({role: 'system', content: `Use the following actors for analysis of the user prompt: ${ajson}`});
     messages.push({role: 'system', content: `Use the following package for analysis of the user prompt: ${pjson}`});
     messages.push({
@@ -254,13 +254,13 @@ async function _generateActors(notes) {
          */
     }
     notes.save();
-    AEvent.emit("generate.completed", {message: `Generated ${actors.length} Actors from Notes`});
+    AEvent.emit({event:"generate.completed", data: {message: `Generated ${actors.length} Actors from Notes`} });
     return actors;
 }
 
 async function _generateWorkflows(notes) {
     const AWorkflow = require("./AWorkflow");
-    AEvent.emit("generate.started", {message: "Generating Workflows from Notes"});
+    AEvent.emit({event:"generate.started", data: {message: "Generating Workflows from Notes"} });
     const workflowFormat = `
 {
     name: 'Workflow Name',
@@ -384,7 +384,7 @@ async function _generateWorkflows(notes) {
             notes.addItem('AWorkflow', workflow);
         }
         notes.save();
-        AEvent.emit("generate.completed", {message: `Generating ${workflows.length} Workflows from Notes`});
+        AEvent.emit({event:"generate.completed", data: {message: `Generating ${workflows.length} Workflows from Notes`} });
         return package;
     } catch (e) {
         console.error("Error parsing JSON:", e);
@@ -528,13 +528,13 @@ async function _generateInterfaces(notes) {
         // AUseCase.save(usecase);
     }
     notes.save();
-    AEvent.emit("generate.completed", {message: `Generating ${usecases.length} UseCases from Notes`});
+    AEvent.emit({event:"generate.completed", data: {message: `Generating ${usecases.length} UseCases from Notes`} });
     return package;
 }
 
 async function _generateUseCases(notes) {
     const AUseCase = require("./AUseCase");
-    AEvent.emit("generate.started", {message: `Generating UseCases from Notes`});
+    AEvent.emit({event:"generate.started", data: {message: `Generating UseCases from Notes`} });
     const usecaseFormat = `
     {
         name: 'usecase name',
@@ -588,7 +588,7 @@ async function _generateUseCases(notes) {
         // AUseCase.save(usecase);
     }
     notes.save();
-    AEvent.emit("generate.completed", {message: `Generating ${usecases.length} UseCases from Notes`});
+    AEvent.emit({event:"generate.completed", data: {message: `Generating ${usecases.length} UseCases from Notes`} });
     return package;
 };
 

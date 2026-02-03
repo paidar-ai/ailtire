@@ -16,7 +16,7 @@
     <script src="js/d3-force-3d.js"></script>
     <script src="js/Graph3D.js"></script>
     <script src="js/socket.io.js"></script>
-    <script src="//unpkg.com/three-spritetext"></script>
+    <script src="//unpackage.com/three-spritetext"></script>
 
 </head>
 <script type="text/javascript">
@@ -174,26 +174,26 @@
         }
         return sitems;
     }
-    function getPackageNodes(pkg) {
+    function getPackageNodes(package) {
         let sitems = [];
-        for (let pname in pkg.subpackages) {
-            let spkg = pkg.subpackages[pname];
+        for (let pname in package.subpackages) {
+            let spackage = package.subpackages[pname];
             let spkgi = {
-                id: spkg.shortname,
-                text: spkg.name,
+                id: spackage.shortname,
+                text: spackage.name,
                 img: 'icon-folder',
                 link: `package/get?id=${pname}`,
                 view: 'package'
             };
-            if (spkg.subpackages) {
-                let spkgs = getPackageNodes(spkg);
+            if (spackage.subpackages) {
+                let spkgs = getPackageNodes(spackage);
                 spkgi.nodes = spkgs;
                 spkgi.count = spkgs.length;
             }
             sitems.push(spkgi);
         }
-        for(let cname in pkg.classes) {
-            let cls = pkg.classes[cname];
+        for(let cname in package.classes) {
+            let cls = package.classes[cname];
             let citem = {
                 id: cls.name,
                 text: cls.name,

@@ -35,11 +35,11 @@ module.exports = {
                 scenarioObject[aname] = scenario[aname];
             }
             _save(ucObject, scenarioObject);
-            AEvent.emit('scenario.updated', scenarioObject);
+            AEvent.emit({event:'scenario.updated', data: scenarioObject });
             return ucObject;
         } else {
             let retval = _save(ucObject, scenario);
-            AEvent.emit('scenario.created', scenario);
+            AEvent.emit({event:'scenario.created', data: scenario });
             return retval;
         }
     },
@@ -159,7 +159,7 @@ module.exports = {
         let [usecase, scenario] = _find(name);
         // Get the current usecases, class definitions, and workflows
         // Put them into a string and put them as system information.
-        let content = `Use the following usecase for analysis of the user prompt:`;
+        let content = `Use the following usecas analysis of the user prompt:`;
         content += JSON.stringify(scenario);
         messages.push({role: 'system', content: content});
         // Get the current documentation. Add it as system information.
@@ -210,16 +210,16 @@ function _toJSON(scenario) {
             let retaction = {name: step.action};
             let action = Action.find(step.action);
             if (action) {
-                let pkgName = action.pkg;
+                let pkgName = action.package;
                 if (typeof pkgName !== 'string') {
-                    pkgName = action.pkg.shortname;
+                    pkgName = action.package.shortname;
                 }
-                let pkg = APackage.getPackage(pkgName);
+                let package = APackage.getPackage(pkgName);
                 retaction = {
                     name: step.action,
                     cls: action.cls,
-                    pkg: {shortname: pkg.shortname, name: pkg.name, color: pkg.color},
-                    obj: {obj: pkg.obj}
+                    package: {shortname: package.shortname, name: package.name, color: package.color},
+                    obj: {obj: package.obj}
                 };
             }
             rstep.action = retaction;

@@ -32,10 +32,10 @@ module.exports = {
                 env.res.json({id: instanceid});
                 AScenarioInstance.launch(scenario, inputs);
             } else {
-                AEvent.emit("scenario.failed", {obj:{error: "Scenario not found"}});
+                AEvent.emit({event:"scenario.failed", data: {obj:{error: "Scenario not found"}} });
             }
         } else {
-            AEvent.emit("scenario.failed", {obj:{error: "Use Case not found"}});
+            AEvent.emit({event:"scenario.failed", data: {obj:{error: "Use Case not found"}} });
         }
         // api.scenario(inputs.package, inputs.usecase, inputs.name, '.');
         return null;

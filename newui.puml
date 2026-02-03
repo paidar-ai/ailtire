@@ -1,0 +1,66 @@
+@startuml
+
+rectangle "Web Interface" {
+    rectangle "left panel" <<panel>> {
+        class "ArchitectureExplorer" <<TreeView>> {
+            icon : image
+            name : string
+            count : number
+            select(id) : Set the selectedNode in the global store
+            onNodeSelect(id) : Select the node in the tree do not propigate the change
+        }
+    }
+
+    rectangle "right panel" <<panel>> {
+        class "Class List" <<IteractiveList>> {
+            name : string
+            count : number
+            onEvent("Create") : Increase the object count.
+            onNodeSelect(id) : Highlight the item
+            select(id) : Set the selectedNode in the global store
+        }
+    }
+    rectangle "Content Window" <<panel>> {
+        rectangle "Detail Panel" <<ObjectViewer>> {
+            class "Object viewer" <<grid>> {
+                name: string
+                value: string
+                onNodeSelect(id): Show details about the selected item.
+                select(attr) : Select the attriubte selectCharateristic
+            }
+            class "Object details viewer" <<grid>> {
+                name: string
+                value : string
+                onSelectCharacteristic(id) : Show the details of the charateristic.
+            }
+        }
+        class "Main Viewer" <<panel>> {
+            onNodeSelect(id) : Show the Node in the main viewer
+        }
+    }
+    rectangle "Execution Window" <<panel>> {
+        class "Run Window" <<grid>> {
+            actions: Actions (Rerun, information)
+            status: State
+            name: string
+            startTime: DateTime
+            endTime : DateTime
+            duration: Duration
+        }
+        class "Detail Run Window" <<grid>> {
+            name : string
+            parameters: string
+            args: string
+            startTime: DateTime
+            endTime: DateTime
+            duration: Duration
+        }
+        class "Events Viewer" <<grid>> {
+            name: string
+            state: Number of events of this type.
+        }
+    }
+}
+
+
+@enduml

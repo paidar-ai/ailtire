@@ -1,35 +1,49 @@
 {
     "name": "ailtire",
-    "version": "0.20.23",
+    "version": "0.31.0",
     "description": "UML Architecture by coding and simulating system architectures.",
     "main": "index.js",
     "scripts": {
-        "start": "node index.js",
+        "start": "node server.js",
         "build": "node build.js",
         "build-bump": "node build.js bump patch",
         "publish": "node publish.js",
         "docs": "java -jar docs/plantuml.jar docs/*.puml docs/**/*.puml",
-        "startTest": "node test.js"
+        "startTest": "node test.js",
+        "test": "jest test",
+        "test-generate": "node test-generator.js",
+        "test-me": "node bin/ailtire app create --name test-name --path optionalValue"
     },
     "keywords": [],
     "bin": "bin/ailtire",
     "author": "Darren W Pulsipher - darren@pulsipher.org",
     "license": "ISC",
     "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.17.2",
         "axios": "latest",
+        "bcrypt": "^6.0.0",
         "body-parser": "^1.20.0",
+        "chai": "^5.2.1",
         "commander": "^13.1.0",
         "ejs": "^3.1.8",
         "express": "^4.18.1",
         "flatted": "^3.2.6",
+        "json-schema-to-zod": "^2.6.1",
+        "jsonwebtoken": "^9.0.2",
         "kafkajs": "^2.2.4",
+        "keytar": "^7.9.0",
+        "marked": "^17.0.1",
+        "minimatch": "^10.0.3",
         "multer": "latest",
+        "openai": "^5.1.0",
         "socket.io": "^4.5.1",
         "socket.io-client": "^4.5.1",
         "stream-buffers": "latest",
-        "yamljs": "^0.3.0"
+        "yamljs": "^0.3.0",
+        "zod": "^3.25.76"
     },
     "devDependencies": {
+        "jest": "^29.7.0",
         "mocha": "^11.0.1"
     }
 }

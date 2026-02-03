@@ -96,26 +96,26 @@ export default class APackage {
         return box;
     }
 
-    static viewDeep3D(pkg, mode) {
+    static viewDeep3D(package, mode) {
         const theta = Math.PI / 2; // 90 degrees
         let data = {nodes: {}, links: []};
-        const size = APackage.calculateDeepBox(pkg);
-        pkg.size = size;
+        const size = APackage.calculateDeepBox(package);
+        package.size = size;
 
         window.graph.clearObjects();
 
         let package3d = {x: size.w, y: size.h, z: size.d};
         let bbox = {
-            parent: pkg.shortname,
+            parent: package.shortname,
             x: {min: (-package3d.x / 2), max: (package3d.x / 2)},
             y: {min: (-package3d.y / 2), max: (package3d.y / 2)},
             z: {min: (-package3d.z / 2), max: (package3d.z / 2)}
         }
 
-        data.nodes[pkg.shortname] = {
-            id: pkg.shortname,
-            name: pkg.name,
-            description: pkg.description,
+        data.nodes[package.shortname] = {
+            id: package.shortname,
+            name: package.name,
+            description: package.description,
             cube: package3d,
             fontSize: 30,
             fx: 0,
@@ -124,33 +124,33 @@ export default class APackage {
             box: 1, // Make it so items can get really close to the parent package.
             view: APackage.view3D,
             expandView: APackage.handle,
-            expandLink: `package/get?id=${pkg.shortname}`,
+            expandLink: `package/get?id=${package.shortname}`,
             getDetail: APackage.getDetail,
             opacity: 0.5,
-            color: pkg.color
+            color: package.color
         };
         let inodes = [];
-        for (let iname in pkg.interface) {
-            let name = iname.replace(pkg.prefix, '');
+        for (let iname in package.interface) {
+            let name = iname.replace(package.prefix, '');
             let node = {
                 id: iname,
                 name: name,
-                description: pkg.interface[iname].description,
+                description: package.interface[iname].description,
                 view: AInterface.view3D,
                 orientation: {x: 0, y: 2, z: 0}
             };
             data.nodes[iname] = node;
             inodes.push(node);
         }
-        layoutRowColumn(data.nodes[pkg.shortname], inodes, size.interface, "top");
+        layoutRowColumn(data.nodes[package.shortname], inodes, size.interface, "top");
 
         let hnodes = [];
-        for (let hname in pkg.handlers) {
-            let handler = pkg.handlers[hname];
+        for (let hname in package.handlers) {
+            let handler = package.handlers[hname];
             let node = {
                 id: hname,
                 name: handler.name,
-                description: pkg.handlers[hname].description,
+                description: package.handlers[hname].description,
                 view: AHandler.view3D,
                 orientation: {x: 1, y: 0, z: 0}
             };
@@ -160,17 +160,17 @@ export default class APackage {
             for (let h in handler.handlers) {
                 let hand = handler.handlers[h];
                 if (hand.action) {
-                    let aname = hand.action.replace('/' + pkg.shortname, pkg.prefix);
+                    let aname = hand.action.replace('/' + package.shortname, package.prefix);
                     // window.graph.addLink({source:hname, target: aname, color: 'magenta'});
                     data.links.push({source: hname, target: aname, color: '#ffffbb', value: 0.1, width: 5});
                 }
             }
         }
-        layoutRowColumn(data.nodes[pkg.shortname], hnodes, size.handlers, "right");
+        layoutRowColumn(data.nodes[package.shortname], hnodes, size.handlers, "right");
 
         let ucnodes = [];
-        for (let uname in pkg.usecases) {
-            let uc = pkg.usecases[uname];
+        for (let uname in package.usecases) {
+            let uc = package.usecases[uname];
 
             let node = {
                 id: uname, name: uc.name,
@@ -185,23 +185,23 @@ export default class APackage {
             if (uc.method) {
                 data.links.push({
                     source: uname,
-                    target: pkg.prefix + '/' + uc.method,
+                    target: package.prefix + '/' + uc.method,
                     color: '#ffffbb',
                     value: 0.1,
                     width: 5
                 });
             }
         }
-        layoutRowColumn(data.nodes[pkg.shortname], ucnodes, size.usecases, "bottom");
+        layoutRowColumn(data.nodes[package.shortname], ucnodes, size.usecases, "bottom");
 
         let cnodes = [];
-        for (let cname in pkg.classes) {
-            let cls = pkg.classes[cname];
+        for (let cname in package.classes) {
+            let cls = package.classes[cname];
             let node = {
                 id: cname, name: cls.name,
                 description: cls.description,
                 rbox: {
-                    parent: pkg.shortname, x: bbox.x, y: bbox.y,
+                    parent: package.shortname, x: bbox.x, y: bbox.y,
                     z: {min: bbox.z.min - 50, max: bbox.z.min - 50}
                 },
                 rotate: {y: 2 * theta},
@@ -211,16 +211,16 @@ export default class APackage {
             data.nodes[cname] = node;
             cnodes.push(node);
         }
-        layoutRowColumn(data.nodes[pkg.shortname], cnodes, size.classes, "back");
+        layoutRowColumn(data.nodes[package.shortname], cnodes, size.classes, "back");
         let spnodes = [];
-        for (let pname in pkg.subpackages) {
-            let spkg = pkg.subpackages[pname];
+        for (let pname in package.subpackages) {
+            let spackage = package.subpackages[pname];
             let node = {
                 id: pname,
-                name: spkg.name,
-                description: spkg.description,
+                name: spackage.name,
+                description: spackage.description,
                 rotate: {y: -theta},
-                color: spkg.color,
+                color: spackage.color,
                 view: APackage.view3D,
                 orientation: {x: -1, y: 0, z: 0}
             }
@@ -228,27 +228,27 @@ export default class APackage {
             spnodes.push(node);
         }
 
-        layoutRowColumn(data.nodes[pkg.shortname], spnodes, size.subpackages, "left");
+        layoutRowColumn(data.nodes[package.shortname], spnodes, size.subpackages, "left");
 
-        for (let pname in pkg.depends) {
-            let spkg = pkg.depends[pname];
+        for (let pname in package.depends) {
+            let spackage = package.depends[pname];
             let node = {
                 id: pname,
-                name: spkg.name,
-                description: spkg.description,
+                name: spackage.name,
+                description: spackage.description,
                 rbox: {
-                    parent: pkg.shortname,
+                    parent: package.shortname,
                     y: {min: bbox.y.max, max: bbox.y.max * 2},
                     z: bbox.z,
                     fx: bbox.x.min - 150,
                 },
-                color: spkg.color,
+                color: spackage.color,
                 rotate: {y: -theta},
                 view: APackage.view3D,
                 orientation: {x: -1, y: 0, z: 0}
             }
             data.nodes[pname] = node;
-            data.links.push({source: pkg.shortname, target: pname, color: '#ffffbb', value: 1.0, width: 2});
+            data.links.push({source: package.shortname, target: pname, color: '#ffffbb', value: 1.0, width: 2});
         }
         if (mode === 'add') {
             window.graph.addData(data.nodes, data.links);
@@ -262,7 +262,7 @@ export default class APackage {
             3000  // ms transition duration.
         );
         window.graph.showLinks();
-        _setGraphToolbar(pkg);
+        _setGraphToolbar(package);
     }
 
     static handle(result) {
@@ -313,16 +313,16 @@ export default class APackage {
         return asize;
     }
 
-    static calculateDeepBox(pkg) {
-        let ibox = APackage.calculateGroupBox(pkg.interface, AInterface.calculateBox); // XZ
-        let hbox = APackage.calculateGroupBox(pkg.handlers, AHandler.calculateBox); // YZ
-        let ubox = APackage.calculateGroupBox(pkg.usecases, AUsecase.calculateBox); // XY
-        let cbox = APackage.calculateGroupBox(pkg.classes, AModel.calculateBox); // XY
-        let pbox = APackage.calculateGroupBox(pkg.subpackages, APackage.calculateBox); // XZ
-        let dbox = APackage.calculateGroupBox(pkg.depends, APackage.calculateBox); // YZ
+    static calculateDeepBox(package) {
+        let ibox = APackage.calculateGroupBox(package.interface, AInterface.calculateBox); // XZ
+        let hbox = APackage.calculateGroupBox(package.handlers, AHandler.calculateBox); // YZ
+        let ubox = APackage.calculateGroupBox(package.usecases, AUsecase.calculateBox); // XY
+        let cbox = APackage.calculateGroupBox(package.classes, AModel.calculateBox); // XY
+        let pbox = APackage.calculateGroupBox(package.subpackages, APackage.calculateBox); // XZ
+        let dbox = APackage.calculateGroupBox(package.depends, APackage.calculateBox); // YZ
 
         /* X is always the width, Y is height with X, Y is width with Z, Z is always h */
-        let fontWidth = pkg.name.length * APackage.default.fontSize / 2;
+        let fontWidth = package.name.length * APackage.default.fontSize / 2;
         const wnum = Math.max(ibox.box.w, ubox.box.w, cbox.box.w, 100, fontWidth);
         const hnum = Math.max(hbox.box.w, ubox.box.h, cbox.box.h, dbox.box.h, pbox.box.h, 100);
         const dnum = Math.max(ibox.box.h, hbox.box.h, pbox.box.w, dbox.box.w, 100);
@@ -802,7 +802,7 @@ function _createPackageEditModels(record, setURL) {
                 let count = 0;
                 for (let name in w2ui.PackageEditModels.record.classes) {
                     let usecase = w2ui.PackageEditModels.record.classes[name];
-                    records.push({
+                   records.push({
                         recid: count++,
                         name: usecase.name,
                         description: usecase.description,
@@ -1439,27 +1439,27 @@ function _setGraphToolbar(object) {
         },
     ]);
 }
-function getPackageNodes(pkg) {
+function getPackageNodes(package) {
     let sitems = [];
-    for (let pname in pkg.subpackages) {
-        let spkg = pkg.subpackages[pname];
+    for (let pname in package.subpackages) {
+        let spackage = package.subpackages[pname];
         let spkgi = {
-            id: spkg.shortname,
-            text: spkg.name,
+            id: spackage.shortname,
+            text: spackage.name,
             img: 'icon-folder',
             link: `package/get?id=${pname}`,
             link2d: `package/uml?id=${pname}`,
             view: 'package'
         };
-        if (spkg.subpackages) {
-            let spkgs = getPackageNodes(spkg);
+        if (spackage.subpackages) {
+            let spkgs = getPackageNodes(spackage);
             spkgi.nodes = spkgs;
             spkgi.count = spkgs.length;
         }
         sitems.push(spkgi);
     }
-    for (let cname in pkg.classes) {
-        let cls = pkg.classes[cname];
+    for (let cname in package.classes) {
+        let cls = package.classes[cname];
         let citem = {
             id: cls.name,
             text: cls.name,

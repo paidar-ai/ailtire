@@ -3,8 +3,8 @@
 <%
 let pkgs = {};
 for(let i in package.depends) {
-    let dpkg = package.depends[i];
-    pkgs[dpkg.shortname] = {name: dpkg.name, color:dpkg.color, classes:{}};
+    let dpackage = package.depends[i];
+    pkgs[dpackage.shortname] = {name: dpackage.name, color:dpackage.color, classes:{}};
 }
 for(let cname in package.classes) {
     let cls = package.classes[cname];
@@ -13,19 +13,19 @@ for(let cname in package.classes) {
         let atype = assoc.type;
         let aclass = global.classes[atype];
         if(aclass) {
-            let pkg = aclass.package;
-            if(!pkgs.hasOwnProperty(pkg.shortname)) {
-                pkgs[pkg.shortname] = {name: pkg.name, color: pkg.color, classes:{}};
+            let package = aclass.package;
+            if(!pkgs.hasOwnProperty(package.shortname)) {
+                pkgs[package.shortname] = {name: package.name, color: package.color, classes:{}};
             }
-            pkgs[pkg.shortname].classes[atype] = 1;
+            pkgs[package.shortname].classes[atype] = 1;
         }
     }
 }
 for(let pname in pkgs) {
-    let pkg = pkgs[pname];
+    let package = pkgs[pname];
 %>
-package "<%= pkg.name %>" #<%= pkg.color.replace('#', '') %> {
-    <% for(let cname in pkg.classes) { %>
+package "<%= package.name %>" #<%= package.color.replace('#', '') %> {
+    <% for(let cname in package.classes) { %>
         class <%= cname %> {
         }
     <% } -%>
@@ -77,9 +77,9 @@ package "<%= package.name %>" #<%= package.color.replace('#','') %> {
 }
 
 <% for(let i in package.depends) {
-    let dpkg = package.depends[i];
+    let dpackage = package.depends[i];
     %>
-    "<%= package.name %>" --> "<%= dpkg.name %>"
+    "<%= package.name %>" --> "<%= dpackage.name %>"
 <% } %>
 
 @enduml

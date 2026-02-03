@@ -1,0 +1,1 @@
+module.exports = {"name":"Research Analyst","description":"Description of the Role needs to be done! (TBD)","permissions":[]}

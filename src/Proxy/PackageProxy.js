@@ -109,7 +109,7 @@ function _toJSON(obj) {
                 retval.usecases = {};
                 for (let i in obj.usecases) {
                     retval.usecases[i] = {
-                        pkg: obj.usecases[i].pkg,
+                        package: obj.usecases[i].package,
                         name: obj.usecases[i].name,
                         description: obj.usecases[i].description,
                         actors: obj.usecases[i].actors,
@@ -123,7 +123,7 @@ function _toJSON(obj) {
                 retval.interface = {};
                 for (let i in obj.interface) {
                     retval.interface[i] = {
-                        pkg: obj.interface[i].pkg.shortname,
+                        package: obj.interface[i].package.shortname,
                         name: obj.interface[i].name,
                         description: obj.interface[i].description,
                         inputs: obj.interface[i].inputs,

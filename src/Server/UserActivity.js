@@ -8,7 +8,7 @@ class UserActivity {
         this.id = opts.activity.id;
         _userActivityInstances[this.id] = this;
         _saveInstance(this,this.parent);
-        AEvent.emit("useractivity.created", {obj: this.toJSON()});
+        AEvent.emit({event:"useractivity.created", data: {obj: this.toJSON()} });
     }
     static getInstance(id) {
         return _userActivityInstances[id];
@@ -26,8 +26,8 @@ class UserActivity {
         this.activity.outputs = outputs;
         this.state = "Completed";
         _saveInstance(this,this.parent);
-        AEvent.emit("activity.completed", {obj: this.toJSON()});
-        AEvent.emit("useractivity.completed", {obj: this.toJSON()});
+        AEvent.emit({event:"activity.completed", data: {obj: this.toJSON()} });
+        AEvent.emit({event:"useractivity.completed", data: {obj: this.toJSON()} });
     }
     toJSON() {
         return {

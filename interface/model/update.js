@@ -15,7 +15,7 @@ module.exports = {
 
     fn: function (inputs, env) {
         try {
-            let cls = AClass.getClass(inputs.id);
+            let cls = AClass.getClass({name:inputs.id});
             for(let fname in inputs) {
                 if(fname === 'document') {
                     // find the document directory and store the contents.

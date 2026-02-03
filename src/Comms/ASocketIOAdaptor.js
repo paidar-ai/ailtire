@@ -68,7 +68,7 @@ class ASocketIOAdaptor extends ABaseCommsAdaptor {
             socket.on(event, async function (data) {
                 // Clean up the data.
                 if (data.obj.hasOwnProperty('definition') && data.obj.hasOwnProperty('_attributes')) {
-                    let cls = AClass.getClass(data.obj.definition.name);
+                    let cls = AClass.getClass({name:data.obj.definition.name});
                     data.obj = await cls.findDeep(data.obj._attributes.id);
                 }
                 // Ok now call the handlers.

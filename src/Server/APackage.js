@@ -155,11 +155,11 @@ module.exports = {
     getPackage: (pkgName) => {
         return _getPackage(pkgName);
     },
-    getDocumentation: (pkg) => {
-        if (typeof pkg === 'string') {
-            pkg = _getPackage(pkg);
+    getDocumentation: (package) => {
+        if (typeof package === 'string') {
+            package = _getPackage(package);
         }
-        return _getDocumentation(pkg);
+        return _getDocumentation(package);
     },
     generateDocumentation: async (pkgName) => {
         let messages = [];
@@ -473,12 +473,12 @@ module.exports = {
     },
 };
 
-function _getDocumentation(pkg) {
+function _getDocumentation(package) {
     let retval = "";
-    if (pkg.doc) {
-        let bdir = pkg.doc.basedir;
-        for (let i in pkg.doc.files) {
-            let dfile = path.resolve(`${bdir}/${pkg.doc.files[i]}`);
+    if (package.doc) {
+        let bdir = package.doc.basedir;
+        for (let i in package.doc.files) {
+            let dfile = path.resolve(`${bdir}/${package.doc.files[i]}`);
             let extName = path.extname(dfile);
             if (extName === '.puml' || extName === '.emd' || extName === '.md') {
                 retval += fs.readFileSync(dfile, 'utf-8');
@@ -546,28 +546,28 @@ function _getPackage(pkgName) {
     }
     // Now check the short name
     for (let name in global.packages) {
-        let pkg = global.packages[name];
-        if (pkg.shortname === pkgName) {
-            return pkg;
+        let package = global.packages[name];
+        if (package.shortname === pkgName) {
+            return package;
         }
     }
     throw new Error("Package Not Found:" + pkgName);
 };
 
-function _save(pkg) {
+function _save(package) {
 
-    let cfile = path.resolve(`${pkg.definition.dir}/index.js`);
+    let cfile = path.resolve(`${package.definition.dir}/index.js`);
     let depends = [];
-    for (let i in pkg.depends) {
-        depends.push(pkg.depends[i].name);
+    for (let i in package.depends) {
+        depends.push(package.depends[i].name);
     }
-    let description = pkg.description.replace(/'/g, '"');
+    let description = package.description.replace(/'/g, '"');
     let output = `
 module.exports = {
-    "shortname": '${pkg.shortname}',
-    "name": '${pkg.name}',
+    "shortname": '${package.shortname}',
+    "name": '${package.name}',
     'description': '${description}',
-    'color': '${pkg.color}',
+    'color': '${package.color}',
     `;
     if (depends.length > 0) {
         output += `
@@ -608,5 +608,5 @@ function _addInterface(package, method) {
     }
     let apath = `${package.prefix}/${method.name}`;
     package.definition.interface[apath] = method;
-    return Action.create(pkg, apath, method);
+    return Action.create(package, apath, method);
 }

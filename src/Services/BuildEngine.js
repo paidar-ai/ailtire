@@ -4,23 +4,23 @@ const Generator = require('../Documentation/Generator');
 const fs = require('fs');
 
 module.exports = {
-    pkg: (pkg, opts) => {
-        buildPackage(pkg, opts);
+    package: (package, opts) => {
+        buildPackage(package, opts);
     },
-    publishPkg: (pkg, opts) => {
-        publishPackage(pkg, opts);
+    publishpackage: (package, opts) => {
+        publishPackage(package, opts);
     },
     services: (dir, opts) => {
         buildBaseImages(dir, opts);
     },
-    buildService: (pkg, opts) => {
-        return buildEngine(pkg, opts);
+    buildService: (package, opts) => {
+        return buildEngine(package, opts);
     },
-    serviceStartFile: (pkg, opts) => {
-        return buildStartFile(pkg, opts);
+    serviceStartFile: (package, opts) => {
+        return buildStartFile(package, opts);
     },
-    serviceFiles: (pkg, opts) => {
-        return buildServiceFiles(pkg, opts);
+    serviceFiles: (package, opts) => {
+        return buildServiceFiles(package, opts);
     },
     publish: (dir) => {
         return publishServices(dir);
@@ -69,10 +69,10 @@ function bumpVersion(dir, type) {
     console.log(`Bumping version: ${versionString}`);
     return versionString;
 }
-function publishPackage(pkg) {
-    if (pkg.deploy) {
-        for (let name in pkg.deploy.build.contexts) {
-            let build = pkg.deploy.build.contexts[name];
+function publishPackage(package) {
+    if (package.deploy) {
+        for (let name in package.deploy.build.contexts) {
+            let build = package.deploy.build.contexts[name];
             _publishImage(build);
         }
     }
@@ -126,8 +126,8 @@ function _publishImage(build) {
         let pkgFile = path.resolve(`${build.rootdir}/package.json`);
         let tag = build.tag.replace(':latest', '');
         if (fs.existsSync(pkgFile)) {
-            let pkg = require(pkgFile);
-            tag = tag + ':' + pkg.version;
+            let package = require(pkgFile);
+            tag = tag + ':' + package.version;
             let results = spawn('docker', ['tag', build.tag, tag], {
                 stdio: [process.stdin, process.stdout, process.stderr],
                 env: process.env
@@ -196,12 +196,12 @@ function buildBaseImages(dir, opts) {
     }
 }
 
-function buildServiceFiles(pkg, opts) {
-    if (!pkg.deploy.envs.hasOwnProperty(opts.env)) {
-        console.error(`Building ${pkg.name}: Error: environment design ${opts.env} not found! Look in the deploy.js file for the package!`);
+function buildServiceFiles(package, opts) {
+    if (!package.deploy.envs.hasOwnProperty(opts.env)) {
+        console.error(`Building ${package.name}: Error: environment design ${opts.env} not found! Look in the deploy.js file for the package!`);
         return;
     }
-    let stack = pkg.deploy.envs[opts.env].stack;
+    let stack = package.deploy.envs[opts.env].stack;
     let repo = '';
     if (opts.repo) {
         repo = opts.repo + '/';
@@ -217,61 +217,61 @@ function buildServiceFiles(pkg, opts) {
             './.router.js': {template: '/templates/Package/deploy/router.ejs'},
         }
     };
-    Generator.process(files, pkg.deploy.dir);
+    Generator.process(files, package.deploy.dir);
     let composeFile = './.tmp-stack-compose.yml';
-    if (pkg.deploy.envs[opts.env].file) {
-        composeFile = pkg.deploy.envs[opts.env].file;
+    if (package.deploy.envs[opts.env].file) {
+        composeFile = package.deploy.envs[opts.env].file;
     }
 
-    console.error("Building Stack Container:", pkg.deploy.name);
+    console.error("Building Stack Container:", package.deploy.name);
     return {dockerFile: '.tmp-dockerfile', composeFile: composeFile};
 }
 
-function buildStartFile(pkg, opts) {
-    let stack = pkg.deploy.envs[opts.env].stack;
+function buildStartFile(package, opts) {
+    let stack = package.deploy.envs[opts.env].stack;
     let repo = '';
     if (opts.repo) {
         repo = opts.repo + '/';
     }
     let files = {
         context: {
-            imageName: pkg.deploy.name.toLowerCase(),
-            appName: pkg.deploy.name.toLowerCase(),
+            imageName: package.deploy.name.toLowerCase(),
+            appName: package.deploy.name.toLowerCase(),
         },
         targets: {
             './.tmp-single-compose.yml': {template: '/templates/Package/deploy/single-compose.yml'},
         }
     };
-    Generator.process(files, pkg.deploy.dir);
+    Generator.process(files, package.deploy.dir);
     let composeFile = './.tmp-single-compose.yml';
-    if (pkg.deploy.envs[opts.env].file) {
-        composeFile = pkg.deploy.envs[opts.env].file;
+    if (package.deploy.envs[opts.env].file) {
+        composeFile = package.deploy.envs[opts.env].file;
     }
 
-    console.error("Building Stack Container:", pkg.deploy.name);
+    console.error("Building Stack Container:", package.deploy.name);
 
     return {composeFile: composeFile};
 }
 
-function buildEngine(pkg, opts) {
+function buildEngine(package, opts) {
     // Build process will buildEngine an docker image that will start the stack if there is one.
-    // let apath = path.resolve(pkg.deploy.dir + '/deploy.js');
+    // let apath = path.resolve(package.deploy.dir + '/deploy.js');
     // if(fs.existsSync(apath)) {
     // let deploy = require(apath);
-    let files = buildServiceFiles(pkg, opts);
+    let files = buildServiceFiles(package, opts);
     // Create the Dockerfile from the template with contexts set from the deploy
-    if (!pkg.deploy.envs.hasOwnProperty(opts.env)) {
+    if (!package.deploy.envs.hasOwnProperty(opts.env)) {
         // console.error("Could not find the environment:", opts.env);
-        // console.error("Environments:", pkg.deploy.envs);
+        // console.error("Environments:", package.deploy.envs);
         return;
     }
-    let proc = spawn('docker', ['buildx', 'build', '--sbom=true', '--provenance=true', '-t', pkg.deploy.name.toLowerCase(), '-f', files.dockerFile, '.'], {
-        cwd: pkg.deploy.dir,
+    let proc = spawn('docker', ['buildx', 'build', '--sbom=true', '--provenance=true', '-t', package.deploy.name.toLowerCase(), '-f', files.dockerFile, '.'], {
+        cwd: package.deploy.dir,
         stdio: [process.stdin, process.stdout, process.stderr],
         env: process.env
     });
     if (proc.status != 0) {
-        console.error("Error Building Service Container", pkg.deploy.name);
+        console.error("Error Building Service Container", package.deploy.name);
         console.error(proc.stdout.toString('utf-8'));
         console.error(proc.stderr.toString('utf-8'));
     }
@@ -281,19 +281,19 @@ function buildEngine(pkg, opts) {
     // }
 }
 
-function buildPackage(pkg, opts) {
-    if (pkg.deploy) {
+function buildPackage(package, opts) {
+    if (package.deploy) {
         // Create a tmp directory to build the microservice
-        let destDir = path.resolve(`${pkg.deploy.dir}/.buildDir`);
+        let destDir = path.resolve(`${package.deploy.dir}/.buildDir`);
         if (!fs.existsSync(destDir)) {
             fs.mkdirSync(destDir);
         }
 
-        for (let name in pkg.deploy.build) {
-            let bc = pkg.deploy.build[name];
+        for (let name in package.deploy.build) {
+            let bc = package.deploy.build[name];
             let build = {};
             if (!bc.contexts.hasOwnProperty(opts.env)) {
-                console.warn(`Building ${pkg.name} Warning:${opts.env} environment not found! Using default environment`);
+                console.warn(`Building ${package.name} Warning:${opts.env} environment not found! Using default environment`);
                 build = bc.contexts.default;
             } else {
                 build = bc.contexts[opts.env];
@@ -320,7 +320,7 @@ function buildPackage(pkg, opts) {
                 console.error("Could not create build directory:", buildDir, e);
             }
             // Now copy everything from the dir option into the directory.
-            let fromPath = path.resolve(`${pkg.deploy.dir}/${build.dir}`);
+            let fromPath = path.resolve(`${package.deploy.dir}/${build.dir}`);
             try {
                 _copyDirectory(fromPath, buildDir);
             } catch (e) {
@@ -335,19 +335,19 @@ function buildPackage(pkg, opts) {
                 console.error("Could not copy the build file:", buildFile, destBuildFile, e);
             }
             // Now copy the deployment to the top directory.
-            _copyDirectory(path.resolve(pkg.deploy.dir), path.join(buildDir, "deploy"));
+            _copyDirectory(path.resolve(package.deploy.dir), path.join(buildDir, "deploy"));
             // Create the interface directory if it does not exist.
             if (!fs.existsSync(`${buildDir}/interface`)) {
                 fs.mkdirSync(`${buildDir}/interface`, {recursive: true});
             }
 
-            // copy the interface for the pkg to api/interface
-            _copyDirectory(path.resolve(pkg.interfaceDir), `${buildDir}/api/interface`);
+            // copy the interface for the package to api/interface
+            _copyDirectory(path.resolve(package.interfaceDir), `${buildDir}/api/interface`);
 
             // Now copy the packages included in the definition
             for (let i in build.packages) {
-                let depPkg = build.packages[i];
-                _copyPackage(depPkg, buildDir);
+                let deppackage = build.packages[i];
+                _copyPackage(deppackage, buildDir);
             }
 
             for (ename in build.env) {
@@ -370,13 +370,13 @@ function buildPackage(pkg, opts) {
                 }
             }
         }
-        buildEngine(pkg, opts);
+        buildEngine(package, opts);
     }
 
     // Iterate over the subsystems and buildEngine the docker images
     if (opts.recursive) {
-        for (let i in pkg.subpackages) {
-            buildPackage(pkg.subpackages[i], opts);
+        for (let i in package.subpackages) {
+            buildPackage(package.subpackages[i], opts);
         }
     }
 }
@@ -440,11 +440,11 @@ function _copyDirectory(src, dest) {
     }
 }
 
-function _copyPackage(srcPkg, destDir) {
+function _copyPackage(srcpackage, destDir) {
     // Top Package has the base directory.
     let topDirectory = path.resolve(global.topPackage.dir);
     // Find the packge first
-    console.log("Adding Package:", srcPkg);
+    console.log("Adding Package:", srcpackage);
 
     // Put the application index.js definition file in the api directory.
     let topPackageFile = path.resolve(`${global.topPackage.definition.dir}/index.js`);
@@ -457,15 +457,15 @@ function _copyPackage(srcPkg, destDir) {
         fs.mkdirSync(`${destDir}/api/interface`, {recursive: true});
     }
 
-    if (global.packages.hasOwnProperty(srcPkg)) {
-        let spkg = global.packages[srcPkg];
-        let spkgDir = path.resolve(spkg.dir);
+    if (global.packages.hasOwnProperty(srcpackage)) {
+        let spackage = global.packages[srcPkg];
+        let spkgDir = path.resolve(spackage.dir);
         //let dpkgDir = spkgDir.replace(topDirectory, '');
         dpkgDir = path.resolve(`${destDir}/api/${srcPkg}`);
         _copyDirectory(spkgDir, dpkgDir);
         // Now process the includes classes into the dpkgDir models file
-        for (let iname in spkg.includes) {
-            let inc = spkg.includes[iname];
+        for (let iname in spackage.includes) {
+            let inc = spackage.includes[iname];
             let destDir = path.resolve(`${dpkgDir}/models/${iname}`);
             _copyDirectory(inc.definition.dir, destDir)
         }
@@ -475,9 +475,9 @@ function _copyPackage(srcPkg, destDir) {
 function _setVersion(buildDir, version) {
     let pkgFile = path.resolve(`${buildDir}/package.json`);
     if (fs.existsSync(pkgFile)) {
-        let pkg = require(pkgFile);
-        pkg.version = version;
-        fs.writeFileSync(pkgFile, JSON.stringify(pkg, null, 4));
+        let package = require(pkgFile);
+        package.version = version;
+        fs.writeFileSync(pkgFile, JSON.stringify(package, null, 4));
     } else {
         const project = {
             name: 'ailtire',

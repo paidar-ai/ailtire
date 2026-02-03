@@ -1,0 +1,6 @@
+{
+  "id": "GenAIProvider0",
+  "name": "default",
+  "adaptorName": "ollama",
+  "defaultModelName": "llama-3.2"
+}

@@ -1,0 +1,16 @@
+@startuml
+title Insight.status lifecycle
+[*] --> Proposed : new/weak evidence
+
+Proposed --> Active : confidence >= 0.60
+Active --> Contested : negative burst / strong counter-signal
+Contested --> Active : reinforced by recent positives
+Active --> Dormant : confidence < 0.45 (decay)
+Dormant --> Retired : confidence < 0.15 (further decay or forget)
+Retired --> Proposed : new evidence beyond threshold
+
+note right of Active
+Applied unless vetoed by user
+or context mismatch
+end note
+@enduml

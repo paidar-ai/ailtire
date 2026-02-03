@@ -30,6 +30,7 @@ class MyTest {
     };
 }
 
+test()
 describe('Proxy Test', () => {
     it('First Test Proxy ', (done) => {
         try {

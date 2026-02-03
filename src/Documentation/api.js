@@ -16,23 +16,23 @@ module.exports = {
         actorGenerator(actor, output);
     },
     // package = { name: string, short: string };
-    package: (pkg, output) => {
-        packageGenerator(pkg, output + '/api');
+    package: (package, output) => {
+        packageGenerator(package, output + '/api');
     },
-    usecase: (pkg, usecase, output) => {
-        usecaseGenerator(pkg, usecase, output + '/api');
+    usecase: (package, usecase, output) => {
+        usecaseGenerator(package, usecase, output + '/api');
     },
-    scenario: (pkg, usecase, name, output) => {
-        scenarioGenerator(pkg, usecase, name, output + '/api');
+    scenario: (package, usecase, name, output) => {
+        scenarioGenerator(package, usecase, name, output + '/api');
     },
-    model: (pkg, name, output) => {
-        modelGenerator(pkg, name, output + '/api');
+    model: (package, name, output) => {
+        modelGenerator(package, name, output + '/api');
     },
-    method: (pkg, model, name, output) => {
-        methodGenerator(pkg, model, name, output);
+    method: (package, model, name, output) => {
+        methodGenerator(package, model, name, output);
     },
-    workflow: (pkg, workflow, output) => {
-        workflowGenerator(pkg, workflow, output);
+    workflow: (package, workflow, output) => {
+        workflowGenerator(package, workflow, output);
     }
 };
 /* Locking for action to have the following
@@ -107,13 +107,13 @@ const actorGenerator = (actor, output) => {
     Generator.process(files, output);
 };
 
-const packageGenerator = (pkg, output) => {
+const packageGenerator = (package, output) => {
 
     // Build out the packages based in the delimiter '/'
     // Check that the package has already been created first.
     // if it has then check the next level.
-    if(pkg.name) {
-        let packageArray = pkg.name.split(/\//);
+    if(package.name) {
+        let packageArray = package.name.split(/\//);
         let ancestors = [];
         for (let i in packageArray) {
             let packageItem = packageArray[i];
@@ -156,12 +156,12 @@ const packageGenerator = (pkg, output) => {
     }
     else { // Return the application directory
        output = output;
-       pkg.name = '';
+       package.name = '';
     }
-    return {dir: output, name: pkg.name};
+    return {dir: output, name: package.name};
 };
-const usecaseGenerator = (pkg, name, output) => {
-    let pkgObj = packageGenerator({name: pkg}, output);
+const usecaseGenerator = (package, name, output) => {
+    let pkgObj = packageGenerator({name: package}, output);
     let nameNoSpace = name.replace(/ /g, '');
     let ucDir = pkgObj.dir + `/usecases/${nameNoSpace}`;
     if(!existsDir(ucDir)) {
@@ -193,8 +193,8 @@ const usecaseGenerator = (pkg, name, output) => {
     }
     return {name: name, dir: ucDir};
 };
-const workflowGenerator = (pkg, name, output) => {
-    let pkgObj = packageGenerator({name: pkg}, output);
+const workflowGenerator = (package, name, output) => {
+    let pkgObj = packageGenerator({name: package}, output);
     console.log(pkgObj);
     let nameNoSpace = name.replace(/\s/g, '');
     let ucFile = pkgObj.dir + `/workflows/${nameNoSpace}.js`;
@@ -214,12 +214,12 @@ const workflowGenerator = (pkg, name, output) => {
     return {name: name, dir: pkgObj.dir + '/workflows'};
 };
 
-const scenarioGenerator = (pkg, usecase, name, output) => {
+const scenarioGenerator = (package, usecase, name, output) => {
     let targetDir = output;
     let workingDir = process.cwd();
     let usecaseFile = path.resolve(process.cwd() + '/index.js');
-    if (pkg && usecase) {
-        let usecaseObj = usecaseGenerator(pkg, usecase,output);
+    if (package && usecase) {
+        let usecaseObj = usecaseGenerator(package, usecase,output);
         output = usecaseObj.dir;
     } else if (existsFile(usecaseFile)) {
         let ucInfo = require(usecaseFile);
@@ -242,11 +242,11 @@ const scenarioGenerator = (pkg, usecase, name, output) => {
     };
     Generator.process(files, output);
 };
-const modelGenerator = (pkg, name, output) => {
+const modelGenerator = (package, name, output) => {
     let nameNoSpace = name.replace(/ /g, '');
     let modelDir;
-    if(pkg) {
-        let pkgObj = packageGenerator({name: pkg}, output);
+    if(package) {
+        let pkgObj = packageGenerator({name: package}, output);
         modelDir = pkgObj.dir + `/models/${nameNoSpace}`;
         output = pkgObj.dir;
     }
@@ -268,12 +268,12 @@ const modelGenerator = (pkg, name, output) => {
     }
     return {name: name, dir: modelDir};
 };
-const methodGenerator = (pkg, model, name, output) => {
+const methodGenerator = (package, model, name, output) => {
     let targetDir = output;
     let workingDir = process.cwd();
     let modelFile = path.resolve(process.cwd() + '/index.js');
-    if (pkg && model) {
-        let modelObj = modelGenerator(pkg, model,output);
+    if (package && model) {
+        let modelObj = modelGenerator(package, model,output);
         output = modelObj.dir;
     } else if (existsFile(modelFile)) {
         let modelInfo = require(modelFile);

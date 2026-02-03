@@ -1,12 +1,16 @@
 const fs = require('fs');
 const path = require('path');
-
+const z = require('zod');
 const Renderer = require('../Documentation/Renderer');
+const {StreamableHTTPServerTransport} = require("@modelcontextprotocol/sdk/server/streamableHttp.js");
 
 const isDirectory = source => fs.lstatSync(source).isDirectory();
 const isFile = source => !fs.lstatSync(source).isDirectory();
 const getDirectories = source => fs.readdirSync(source).map(name => path.join(source, name)).filter(isDirectory);
 const getFiles = source => fs.readdirSync(source).map(name => path.join(source, name)).filter(isFile);
+
+const protocols = require('../security/protocols/index.js');
+const minimatch = require('minimatch')
 
 module.exports = {
     execute: async (action, inputs, env) => {
@@ -17,41 +21,48 @@ module.exports = {
         let nroute = route.replaceAll(/\s/g, '').toLowerCase();
         global.actions[nroute] = action;
         global._server.all(nroute, async (req, res) => {
+            if (req.method === 'OPTIONS') {
+                // Handle the CORS preflight request
+                res.header('Access-Control-Allow-Origin', '*');
+                res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+                res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                return res.status(200).end(); // Respond with a 200 and end the response
+            }
             await execute(action, req.query, {req: req, res: res});
         });
     },
-    load: (server, prefix, mDir, config) => {
+    load: (server, prefix, config) => {
         if (server && !global._server) {
             global._server = server;
         }
-        loadActions(prefix, mDir);
+        // loadActions(prefix, mDir);
         mapToServices();
         if (server) {
             mapToServer(server, config);
         }
     },
-    create: (pkg, path, details) => {
+    create: (package, path, details) => {
         global.actions[path] = details;
-        global.actions[path].pkg = pkg.shortname; // If I put the object in here I geta circular reference.
-        global.actions[path].obj = pkg.name;
+        global.actions[path].package = package.shortname; // If I put the object in here I geta circular reference.
+        global.actions[path].obj = package.name;
         return global.actions[path];
     },
     defaults: (server) => {
-        addForModels(server);
+        // addForModels(server);
     },
     mapRoutes: (server, config) => {
         // Routes are mapped to action paths.
         for (let i in config.routes) {
             // Get Action handler from the actions.
             // let routeTarget = config.routes[i];
-            if(config.routes[i].includes('layouts')) {
-                   server.all(`/${config.routes[i]}`, (req, res) => {
-                        let layout = config.routes[i].split('/')[1];  
-                        return Renderer.render(layout, './index', {
-                            app:{name: config.name},
-                            name: config.name
-                        });
-                   }); 
+            if (config.routes[i].includes('layouts')) {
+                server.all(`/${config.routes[i]}`, (req, res) => {
+                    let layout = config.routes[i].split('/')[1];
+                    return Renderer.render(layout, './index', {
+                        app: {name: config.name},
+                        name: config.name
+                    });
+                });
             } else {
                 let route = config.urlPrefix + '/' + i.toLowerCase();
                 let action = find(config.routes[i]);
@@ -62,6 +73,13 @@ module.exports = {
                         });
                     } else {
                         server.all(route, async (req, res) => {
+                            if (req.method === 'OPTIONS') {
+                                // Handle the CORS preflight request
+                                res.header('Access-Control-Allow-Origin', '*');
+                                res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+                                res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                                return res.status(200).end(); // Respond with a 200 and end the response
+                            }
                             await execute(action, req.query, {req: req, res: res});
                         });
                     }
@@ -75,6 +93,7 @@ module.exports = {
         return find(name);
     }
 };
+
 
 // Add ServiceProxy here.
 const mergeMaps = (target, source) => {
@@ -105,13 +124,12 @@ const addForModels = (server) => {
     const showAction = require('./actions/show.js');
     const addAction = require('./actions/add.js');
     let act;
-    const AClass = require('./AClass');
     for (let name in global.classes) {
-        let cls = AClass.getClass(name);
+        let cls = AClass.getClass({name: name});
         act = setAction(`/${name}/new`, newAction);
 
         act.obj = cls.definition.name;
-        act.pkg = cls.definition.package;
+        act.package = cls.definition.package;
         act.cls = cls.definition.name;
 
         // Check if Create method exists
@@ -135,21 +153,21 @@ const addForModels = (server) => {
             }
             act = setAction(`/${name}/create`, newCreate);
             act.obj = cls.definition.name;
-            act.pkg = cls.definition.package
+            act.package = cls.definition.package
             act.cls = cls.definition.name;
         } else {
             act = setAction(`/${name}/create`, createAction);
             act.obj = cls.definition.name;
-            act.pkg = cls.definition.package;
+            act.package = cls.definition.package;
             act.cls = cls.definition.name;
         }
         act = setAction(`/${name}/list`, listAction);
         act.obj = cls.definition.name;
-        act.pkg = cls.definition.package;
+        act.package = cls.definition.package;
         act.cls = cls.definition.name;
         act = setAction(`/${name}/destory`, destroyAction);
         act.obj = cls.definition.name;
-        act.pkg = cls.definition.package;
+        act.package = cls.definition.package;
         act.cls = cls.definition.name;
         let inputs = {};
         for (let aname in cls.definition.attributes) {
@@ -175,7 +193,7 @@ const addForModels = (server) => {
                 };
                 act = setAction(`/${name}/add${assocUpper}`, newAddAction);
                 act.obj = cls.definition.name;
-                act.pkg = cls.definition.package;
+                act.package = cls.definition.package;
                 act.cls = cls.definition.name;
             } else {
                 inputs[aname] = {
@@ -189,7 +207,7 @@ const addForModels = (server) => {
         act = setAction(`/${name}`, showAction);
 
         act.obj = cls.definition.name;
-        act.pkg = cls.definition.package;
+        act.package = cls.definition.package;
         act.cls = cls.definition.name;
         inputs.id = {
             type: 'string',
@@ -211,7 +229,7 @@ const addForModels = (server) => {
         }
         act = setAction(`/${name}/update`, newUpdateAction);
         act.obj = cls.definition.name;
-        act.pkg = cls.definition.package;
+        act.package = cls.definition.package;
         act.cls = cls.definition.name;
     }
 };
@@ -248,50 +266,228 @@ const loadActions = (prefix, mDir) => {
 };
 
 const mapToServer = (server, config) => {
-    for (let i in global.actions) {
-        let gaction = global.actions[i];
-        if (i[0] !== '/') {
-            i = '/' + i;
+    // let's iterate over all of the interface of the application and add them to the path
+    let interfaces = _instances.AInterface;
+    for (let i in interfaces) {
+        let gaction = interfaces[i];
+        let normalizedName = gaction.path;
+        if (!normalizedName.startsWith('/')) {
+            normalizedName = '/' + normalizedName;
         }
-        let normalizedName = i.replace('/' + global.topPackage.shortname, '');
-        if(normalizedName.includes('/upload')) {
-            server.post('*' + normalizedName, async (req, res) => {
-                req.url = req.url.replace(config.urlPrefix, '');
-                await upload(gaction, req.query, {req: req, res: res});
-            });   
-        } else {
-            server.post('*' + normalizedName, async (req, res) => {
-                req.url = req.url.replace(config.urlPrefix, '');
-                await execute(gaction, req.query, {req: req, res: res});
-            });
-            server.all('*' + normalizedName, async (req, res) => {
-                req.url = req.url.replace(config.urlPrefix, '');
-                await execute(gaction, req.query, {req: req, res: res});
-            });
+        _updateRESTRoutes(server, normalizedName, gaction);
+
+        if (config.hasOwnProperty('urlPrefix')) {
+            normalizedName += config.urlPrefix + normalizedName;
+            _updateRESTRoutes(server, normalizedName, gaction);
         }
-        if (!config.hasOwnProperty('urlPrefix')) {
-            config.urlPrefix = '';
-        }
-        normalizedName = config.urlPrefix + normalizedName;
-        if(normalizedName.includes('/upload')) {
-            if(global.upload) {
-                server.post('*' + normalizedName, global.upload.single('file'), async (req, res) => {
-                    req.url = req.url.replace(config.urlPrefix, '');
-                    await upload(gaction, req.query, {req: req, res: res});
-                });
-            }
-        } else {
-            server.post('*' + normalizedName, async (req, res) => {
-                req.url = req.url.replace(config.urlPrefix, '');
-                await execute(gaction, req.query, {req: req, res: res});
-            });
-            server.all('*' + normalizedName, async (req, res) => {
-                req.url = req.url.replace(config.urlPrefix, '');
-                await execute(gaction, req.query, {req: req, res: res});
-            });
+        if (config.mcp) {
+            _addMCPTool(config.mcpServer, gaction);
         }
     }
+    if (config.mcp) {
+        _addMCPRoutes(server, config.mcpServer);
+    }
 };
+
+function _addMCPRoutes(server, mcpServer) {
+    const sessions = new Map();
+
+    async function ensureSessionTransport(sessionId) {
+        let entry = sessions.get(sessionId);
+        if (entry) return entry;
+
+        const transport = new StreamableHTTPServerTransport({sessionIdGenerator: () => sessionId});
+
+        // Connect once; reuse for all requests with this session
+        await mcpServer.connect(transport);
+
+        entry = {
+            transport,
+            close: () => {
+                try {
+                    transport.close();
+                } catch {
+                }
+                sessions.delete(sessionId);
+            },
+        };
+        sessions.set(sessionId, entry);
+        return entry;
+    }
+
+    server.post("/mcp", async (req, res) => {
+        try {
+            const sid = req.header("Mcp-Session-Id") || "default-session";
+            const {transport} = await ensureSessionTransport(sid);
+
+            // MCP transport requires client to accept JSON + SSE (even if not streaming)
+            if (!req.headers.accept?.includes("application/json") || !req.headers.accept?.includes("text/event-stream")) {
+                return res.status(406).json({
+                    jsonrpc: "2.0",
+                    id: null,
+                    error: {
+                        code: -32000,
+                        message: "Not Acceptable: Client must accept both application/json and text/event-stream"
+                    },
+                });
+            }
+
+            await transport.handleRequest(req, res, req.body);
+        } catch (err) {
+            console.error("MCP /mcp error:", err);
+            if (!res.headersSent) {
+                res.status(500).json({
+                    jsonrpc: "2.0",
+                    id: null,
+                    error: {code: -32603, message: "Internal server error"}
+                });
+            }
+        }
+    });
+
+    server.get("/mcp/notifications", async (req, res) => {
+        try {
+            const sid = req.header("Mcp-Session-Id") || "default-session";
+            const {transport} = await ensureSessionTransport(sid);
+            await transport.handleSse(req, res);
+        } catch (err) {
+            console.error("MCP /mcp/notifications error:", err);
+            if (!res.headersSent) res.status(500).end();
+        }
+    });
+
+    server.delete("/mcp/session", (req, res) => {
+        const sid = req.header("Mcp-Session-Id") || "default-session";
+        const entry = sessions.get(sid);
+        if (entry) {
+            entry.close();
+            return res.status(204).end();
+        }
+        return res.status(404).json({error: "Session not found"});
+    });
+}
+
+function _addMCPTool(mcpServer, interface) {
+
+    if (interface.path === '/ailtire/model/list') {
+    }
+    let def = {
+        description: interface.description,
+    }
+    if (interface.inputs) {
+        def.inputSchema = toZodObject(interface.inputs);
+    }
+    if (interface.outputs) {
+        def.outputSchema = toZodObject({retval: interface.outputs});
+    }
+    try {
+        mcpServer.registerTool(interface.path, def, async (inputs) => {
+            let value = await execute(interface, inputs, {mcp: true});
+            try {
+
+                // let retval = z.object(def.outputSchema).parse({retval: value});
+                return {structuredContent: {retval: value}};
+            } catch (e) {
+                console.error("Error parsing output", e);
+                throw e;
+            }
+
+        })
+    } catch (err) {
+        // console.error("Register Tool Error:", err);
+    }
+}
+
+function toZodObject(inputs, title) {
+    let schema = {};
+    for (const [name, def] of Object.entries(inputs)) {
+        let {type, description, required, default: defValue, values, properties} = def;
+
+        // Map custom types into valid Zod types
+        let zodType;
+        if (type) {
+            switch (type.toLowerCase()) {
+                case 'json':
+                    zodType = z.object({}).passthrough();
+                    break;
+                case 'ref':
+                case 'string':
+                    zodType = z.string();
+                    break;
+                case 'integer':
+                    zodType = z.number().int();
+                    break;
+                case 'number':
+                    zodType = z.number();
+                    break;
+                case 'boolean':
+                    zodType = z.boolean();
+                    break;
+                case 'array':
+                    if (properties && typeof properties === 'object') {
+                        const shape = toZodObject(properties);
+                        zodType = z.array(z.object(shape));
+                    } else {
+                        zodType = z.array(z.any());
+                    }
+                    break;
+                case 'object':
+                    if (properties && typeof properties === 'object') {
+                        const shape = toZodObject(properties);
+                        zodType = z.object(shape);
+                    } else {
+                        zodType = z.object({}).passthrough();
+                    }
+                    break;
+                case 'null':
+                    zodType = z.null();
+                    break;
+                default:
+                    zodType = z.string();
+            }
+
+            // Add refinements
+            if (description) {
+                zodType = zodType.describe(description);
+            }
+            if (defValue !== undefined) {
+                zodType = zodType.default(defValue);
+            }
+            if (Array.isArray(values)) {
+                zodType = zodType.refine(val => values.includes(val));
+            }
+
+            schema[name] = required ? zodType : zodType.optional();
+        }
+    }
+
+    return schema;
+}
+
+function _updateRESTRoutes(server, path, action) {
+    if (path.includes('/upload')) {
+        server.post('*' + path, async (req, res) => {
+            req.url = req.url.replace(config.urlPrefix, '');
+            await upload(action, req.query, {req: req, res: res});
+        });
+    } else {
+        server.post('*' + path, async (req, res) => {
+            // req.url = req.url.replace(config.urlPrefix, '');
+            await execute(action, req.query, {req: req, res: res});
+        });
+        server.all('*' + path, async (req, res) => {
+            if (req.method === 'OPTIONS') {
+                // Handle the CORS preflight request
+                res.header('Access-Control-Allow-Origin', '*');
+                res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+                res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+                return res.status(200).end(); // Respond with a 200 and end the response
+            }
+            // req.url = req.url.replace(config.urlPrefix, '');
+            await execute(action, req.query, {req: req, res: res});
+        });
+    }
+}
 
 const mapToServices = () => {
     for (let i in global.actions) {
@@ -400,36 +596,103 @@ const execute = async (action, inputs, env) => {
     const retval = await _executeFunction(action, finputs, env);
     return retval;
 };
-const _processReturn = (action, retval, env) => {
-    if (action.exits) {
-        // Only send json if retval has something.
-        if (retval) {
-            try {
-                if (env && env.res) {
-                    if (!env.res.headersSent) {
-                        if (action.exits.hasOwnProperty('json') && typeof action.exits.json === 'function') {
-                            env.res.json(action.exits.json(retval));
-                        } else if (action.exits.hasOwnProperty('json')) { // default return json in retval.
-                            env.res.json(retval);
+
+function _processReturn(action, payload, env) {
+    action.exits = action.exits || {};
+
+    // Ensure each exit key has {cli,rest,mcp}
+    for (const key of Object.keys(action.exits)) {
+        const ex = action.exits[key];
+        // If developer provided a single fn, convert to object shorthand
+        if (typeof ex === 'function') {
+            action.exits[key] = {cli: ex, rest: ex, mcp: ex};
+        }
+        // Otherwise assume it’s already an object and fill missing branches
+        action.exits[key].cli = action.exits[key].cli || (x => x);
+        action.exits[key].rest = action.exits[key].rest || (x => x);
+        action.exits[key].mcp = action.exits[key].mcp || (x => ({jsonrpc: "2.0", id: null, result: x}));
+    }
+
+    // Guarantee a “success” exit
+    if (!action.exits.success) {
+        action.exits.success = {
+            cli: x => x,
+            rest: x => x,
+            mcp: x => ({jsonrpc: "2.0", id: null, result: x})
+        };
+    }
+
+    // Determine mode
+    const mode = env?.isMcp
+        ? 'mcp'
+        : env?.res
+            ? 'rest'
+            : 'cli';
+
+    // Invoke serializer
+    const out = action.exits.success[mode](payload);
+
+    // Send or return
+    if (mode === 'rest' && env.res && !env.res.headersSent) {
+        return env.res.json(out);
+    }
+    if (mode === 'mcp' && env.res && !env.res.headersSent) {
+        return env.res.json(out);
+    }
+    // cli or direct caller
+    return out;
+}
+
+const authorize = (action, env) => {
+
+    if (!ailtire.config.authEnabled) return;
+
+    const mode = env.isMcp ? 'mcp' : env.res ? 'rest' : 'cli';
+    const key = action.path;
+    const perms = env.actor.permissions || {};
+
+    const allowed = perms.some(pat => {
+        if (pat === '*') return true;
+        return minimatch(key, pat);
+    });
+    if (!allowed) {
+        throw new AppError.Forbidden(`Missing permission: ${key}`);
+    }
+}
+const _executeFunction = async (action, inputs, env) => {
+
+    try {
+        if (ailtire?.config?.authEnabled) {
+            if (!env.req.url.includes('/auth/')) {
+                // Authenticate the user
+                await protocols.authenticate(env);
+
+
+                authorize(action, env);
+            }
+        } else {
+            if (env && AIdentity) {
+                let identities = await AIdentity.createDevIdentities();
+                env.actor = identities[0];
+            }
+        }
+
+        // 2b) Policy checks
+        if (global.policies) {
+            for (let policy of global.policies) {
+                if (policy.appliesTo.some(p => match(p, action.permissionKey))) {
+                    for (let ruleFn of Object.values(policy.rules)) {
+                        if (!await ruleFn(env.actor, action.permissionKey, inputs, env)) {
+                            throw new AError.Forbidden(`Policy ${policy.name} blocked ${action.permissionKey}`);
                         }
                     }
                 }
-            } catch (e) {
-                console.error("Cannot send json for action:", e);
             }
         }
-        if (action.exits.hasOwnProperty('success') && typeof action.exits.success === 'function') {
-            return action.exits.success(retval);
-        } else { // default just retval
-            return retval;
-        }
-    }
-    return retval;
-};
-const _executeFunction = async (action, inputs, env) => {
-    // Default is to pass on the inputs.
-    let retval = inputs;
-    try {
+
+
+        // Default is to pass on the inputs.
+        let retval = inputs;
         if (action.fn.constructor.name === 'AsyncFunction') {
             return (async () => {
                 try {
@@ -445,24 +708,67 @@ const _executeFunction = async (action, inputs, env) => {
             return _processReturn(action, retval, env);
         }
     } catch (e) {
-        for (let name in action.exits) {
-            if (name === e.type) {
-                retval = action.exits[name](e.inputs);
-            }
-        }
-        if (env && env.res) {
-            console.error("Error:", e);
-            console.error("Error Message:", retval.message);
-            // env.res.status(retval.status).json({error: retval.message });
-        }
-        console.log("Error:", e, retval);
-        throw new Error(e, retval);
+        _processError(action, e, env);
     }
 }
+
+function _processError(action, err, env) {
+    action.exits = action.exits || {};
+
+    // Same normalization for exit definitions
+    for (const key of Object.keys(action.exits)) {
+        const ex = action.exits[key];
+        if (typeof ex === 'function') {
+            action.exits[key] = {cli: ex, rest: ex, mcp: ex};
+        }
+        action.exits[key].cli = action.exits[key].cli || (e => {
+            throw e;
+        });
+        action.exits[key].rest = action.exits[key].rest || (e => ({error: e.message}));
+        action.exits[key].mcp = action.exits[key].mcp || (e => ({
+            jsonrpc: "2.0",
+            id: null,
+            error: {code: e.rpcCode || -32000, message: e.message}
+        }));
+    }
+
+    // Pick exit key by err.exit or err.name, else “error”
+    const exitKey = err.exit
+        || Object.keys(action.exits).find(k => k.toLowerCase() === err.name.toLowerCase())
+        || 'error';
+
+    const mode = env?.isMcp
+        ? 'mcp'
+        : env?.res
+            ? 'rest'
+            : 'cli';
+
+    // Invoke the serializer
+    let out = err;
+    if (action.exits && action.exits.hasOwnProperty(exitKey) && action.exits[exitKey].hasOwnProperty(mode)) {
+        out = action.exits[exitKey][mode](err);
+    }
+
+    // Send or return
+    if (mode === 'rest' && env.res && !env.res.headersSent) {
+        const status = err.httpStatus || 500;
+        env.res.status(status).json(out);
+        return;
+    }
+    if (mode === 'mcp' && env.res && !env.res.headersSent) {
+        const status = err.httpStatus || 500;
+        env.res.status(status).json(out);
+        return;
+    }
+
+    // CLI or direct caller: if the cli-branch throws, bubble; else return
+    return out;
+}
+
 const find = (name) => {
     const AClass = require('./AClass');
-    if(typeof name !== "string") {
-       console.error("String should be here:", name) ;
+    if (typeof name !== "string") {
+        console.error("String should be here:", name);
     }
     name = name.toLowerCase();
     // If you match the action name directly return.
@@ -483,11 +789,11 @@ const find = (name) => {
             // Look for automatic actions like create, destroy, etc.
             // First look if the first name is a class. If it is then check the methods on the class.
             // If it is available then return that action.
-            let cls = AClass.getClass(items[0]);
+            let cls = AClass.getClass({name: items[0]});
             if (cls) {
                 if (cls.definition.methods.hasOwnProperty(items[1])) {
                     let retval = cls.definition.methods[items[1]];
-                    retval.pkg = cls.definition.package;
+                    retval.package = cls.definition.package;
                     retval.obj = cls.definition.name;
                     return retval;
                 }

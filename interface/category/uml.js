@@ -1,5 +1,3 @@
-const ACategory = require('../../src/Server/ACategory');
-const generator = require('../../src/Documentation/puml');
 
 module.exports = {
     friendlyName: 'uml',
@@ -13,6 +11,7 @@ module.exports = {
     },
 
     fn: async function (inputs, env) {
+        const generator = require('../../src/Documentation/puml');
         try {
             // Generate the plantuml diagram
             // Or get it from the doc directory.

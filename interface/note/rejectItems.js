@@ -1,6 +1,3 @@
-// const renderer = require('../../src/Documentation/Renderer.js');
-const ANote = require('ailtire/src/Server/ANote');
-
 module.exports = {
     friendlyName: 'rejectItems',
     description: 'Reject Items for generation of artifacts in the architecture.',

@@ -33,7 +33,7 @@ module.exports = {
     fn: function (inputs, env) {
         // Find the Class
         console.log("INPUTS:", inputs);
-        let cls = AClass.getClass(inputs.id);
+        let cls = AClass.getClass({name:inputs.id});
         cls.name = inputs.id;
         cls.id = inputs.id;
         console.log("CLS:", cls);

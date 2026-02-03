@@ -26,7 +26,7 @@ class AWorkflowInstance {
             this.#createLookAheadGraph();
             return this;
         } else {
-            AEvent.emit("workflow.started", {obj: opts.workflow});
+            AEvent.emit({event:"workflow.started", data: {obj: opts.workflow} });
             console.log("start Workflow", opts.workflow.name, opts.args);
             let id = _workflowInstances._total++;
 
@@ -47,8 +47,8 @@ class AWorkflowInstance {
 
 // First activity is Init.
             if (!opts.workflow.activities.hasOwnProperty("Init")) {
-                AEvent.emit("workflow.failed", {obj: opts.workflow, error: "Init Activity does not exist!"});
-                this.state = 'Failed';
+                AEvent.emit({event:"workflow.failed", {obj: opts.workflow, data: error: "Init Activity does not exist!"} });
+                this.state = 'failed';
                 return this;
             }
             if (!_workflowInstances.hasOwnProperty(opts.workflow.name)) {
@@ -64,7 +64,7 @@ class AWorkflowInstance {
 // Setup the workflow to handle events.
 // Create the Activities and attach them to the workflo
             let init = new AActivityInstance({parent: this, name: "Init", activity: opts.workflow.activities.Init});
-            AEvent.emit("workflow.inprogress", {obj: this.toJSON()});
+            AEvent.emit({event:"workflow.inprogress", data: {obj: this.toJSON()} });
 
             return init.execute(opts.args);
         }
@@ -198,7 +198,7 @@ class AWorkflowInstance {
                 }
                 if (calculatedState === "error") {
                     workflow.state = "error";
-                    AEvent.emit("workflow." + workflow.state, {
+                    AEvent.emit({event:"workflow." + workflow.state, data: {
                         obj: workflow.toJSON(),
                         message: `Workflow Finished with ${acti.name} in ${workflow.state} state`
                     });
@@ -209,7 +209,7 @@ class AWorkflowInstance {
                         workflow.parent.finishedTime = new Date();
                         workflow.parent.save();
                         console.error("Activity Error:", nact);
-                        AEvent.emit("activity.error", {
+                        AEvent.emit({event:"activity.error", data: {
                             obj: workflow.parent.toJSON(),
                             message: "Activity Finished from workflow with an error"
                         });
@@ -218,7 +218,7 @@ class AWorkflowInstance {
                     workflow.state = "completed";
                     workflow.finishedTime = new Date();
                     workflow.outputs = acti.outputs;
-                    AEvent.emit("workflow.completed", {
+                    AEvent.emit({event:"workflow.completed", data: {
                         obj: workflow.toJSON(),
                         message: `Workflow Finished with ${acti.name} in ${workflow.state} state`
                     });
@@ -233,7 +233,7 @@ class AWorkflowInstance {
                         workflow.parent.outputs = outputs;
                         workflow.parent.finishedTime = new Date();
                         workflow.parent.save();
-                        AEvent.emit("activity.completed", {
+                        AEvent.emit({event:"activity.completed", data: {
                             obj: workflow.parent.toJSON(),
                             message: "Activity Finished from workflow",
                         });
@@ -243,7 +243,7 @@ class AWorkflowInstance {
                     workflow.finishedTime = new Date();
                     workflow.outputs = acti.outputs;
                     workflow.save();
-                    AEvent.emit("workflow.error", {
+                    AEvent.emit({event:"workflow.error", data: {
                         obj: workflow.toJSON(),
                         message: `Workflow Finished with ${acti.name} in ${workflow.state} state`
                     });
@@ -256,7 +256,7 @@ class AWorkflowInstance {
                         }
                         workflow.parent.outputs = outputs;
                         workflow.save();
-                        AEvent.emit("activity.error", {
+                        AEvent.emit({event:"activity.error", data: {
                             obj: workflow.parent.toJSON(),
                             message: "Activity Finished from workflow",
                         });

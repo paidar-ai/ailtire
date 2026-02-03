@@ -17,7 +17,7 @@ module.exports = {
         }
         // Remove the cls  from the inputs so they are not passed down to the constructor
         let obj = null;
-        let cls = AClass.getClass(modelName);
+        let cls = AClass.getClass({name:modelName});
         if(inputs.hasOwnProperty('id')) {
             obj = cls.find(inputs.id);
         }
@@ -33,7 +33,7 @@ module.exports = {
                 obj[i] = inputs[i];
             }
         }
-        AEvent.emit(modelName + '.updated', {obj: obj.toJSON});
+        AEvent.emit({event:modelName + '.updated', data: {obj: obj.toJSON} });
         if(inputs.mode === 'json') {
             env.res.json({results: "Updated Object"});
             return obj;

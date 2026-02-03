@@ -1,0 +1,19 @@
+# R Package - TDocument Class 
+
+The TDocument class belongs to the `r` package, serving as an integral part of the system involved in the management of TDocuments.
+
+## Overview 
+
+The TDocument class carries out basic TDocument-related operations such as `create`, `update`, `destroy`, `addTo`, `removeFrom`. All these operations enable the users to manage TDocuments efficiently in their application.
+
+This class has a strong association with the `Mapping` class which indicates the TDocument class doesn't work in isolation but collaborates with other classes for a broader functionality.
+
+## Purpose 
+
+The core objective of the TDocument class is to provide an easy interface to work with TDocuments. Whether it be creating a new TDocument, updating an existing one, or performing more complex tasks such as adding to and removing from TDocuments, the methods included in the TDocument class allow for efficient TDocument management.
+
+## Interaction with Other Classes
+
+Apart from its primary duties, the TDocument class interlinks with the `Mapping` class, specifically in the attribute `map`. This attribute aligns with the cardinality of 1, indicating a singular relation with the `Mapping` class. This signifies how the TDocument class fits in and interacts within the overall architecture of the system.
+
+Summarily, the TDocument class stands as a fundamental entity in the `r` package for effectively handling TDocuments and their associated operations. Its collaboration with other classes underscores how interconnected elements work together for the optimal functioning of the system.

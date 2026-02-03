@@ -1,6 +1,4 @@
 const path = require('path');
-const sLoader = require('../../src/Server/Loader');
-const Build = require('../../src/Services/BuildEngine');
 
 module.exports = {
     friendlyName: 'build',
@@ -52,6 +50,10 @@ module.exports = {
         // Iterate down to the Packages the same thing.
         // continue down the tree.
         // Make sure to call docker stack deploy first then go down.
+
+        const sLoader = require('../../src/Server/Loader');
+        const Build = require('../../src/Services/BuildEngine');
+
         let name = inputs.name;
         let apath = path.resolve('.');
         console.log("Analyzing the Project");

@@ -1,0 +1,28 @@
+{
+  "id": "AInsight6",
+  "scopeKey": "global:default",
+  "insightType": "preference",
+  "subjectKey": "response.detail_level",
+  "status": "active",
+  "valueKey": "",
+  "statement": "User prefers a detailed summary instead of lengthy descriptions.",
+  "rationale": "The assistant indicates a limitation in providing lengthy content while offering a detailed overview.",
+  "confidence": 0.9,
+  "priority": 3,
+  "sources": [
+    {
+      "momentId": "AMoment4",
+      "ts": "2025-12-16T19:23:37.411Z"
+    },
+    {
+      "momentId": "AMoment4",
+      "ts": "2025-12-16T19:23:37.411Z"
+    }
+  ],
+  "lastUpdated": "2025-12-16T19:23:42.882Z",
+  "updatedAt": "2025-12-16T19:23:42.882Z",
+  "lastEvidence": {
+    "source": "assistant",
+    "quote": "I can't provide 500 words for each description, but I can offer a more detailed summary of each domain"
+  }
+}

@@ -1,0 +1,39 @@
+<head>
+    <base href="http://<%= config.host %><%= config.urlPrefix %>/" >
+    <link rel="stylesheet/less" type="text/css" href="styles/importer.less" />
+    <script src="js/less.js" type="text/javascript"></script>
+</head>
+
+<h1><%= usecase.name %></h1>
+<%= usecase.description %>
+
+<img src='<%= pageDir %>/Activities.puml'>
+
+<h2>Actors</h2>
+<ul>
+<% for(let aname in usecase.actors) {
+    aname = aname.replace(/\s/g,'');
+    let actor = actors[aname];
+-%>
+    <li><a href='doc/actor/<%= aname %>'><%= actor.name %></a></li>
+<% } %>
+</ul>
+
+<h2>Detail Scenarios</h2>
+<ul>
+<% for(let sname in usecase.scenarios) {
+let nameNoSpaces = sname.replace(/ /g, '');
+let ucName = usecase.name.replace(/ /g,'');
+let prefix = usecase.prefix;
+-%>
+    <li> <a href='doc/usecase<%- prefix %>/<%- ucName %>#Scenario-<%- nameNoSpaces %>'><%= sname %></a></li>
+<% } %>
+</ul>
+<% for(let sname in usecase.scenarios) {
+let nameNoSpaces = sname.replace(/ /g, '');
+let scenario = usecase.scenarios[sname];
+let pkgPath = global.packages[usecase.package.replace(/ /g, '')].prefix;
+-%>
+<%- partial('templates/Scenario/_index.ejs', {scenario:scenario, pageDir: pageDir}) %>
+<% } %>
+

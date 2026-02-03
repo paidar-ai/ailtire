@@ -20,8 +20,8 @@ for(let aname in workflow.activities) {
             pname = activity.package;
             pnospace = activity.package.replace(/\s/g, '');
             if(global.packages.hasOwnProperty(pnospace)) {
-               let pkg = global.packages[pnospace];
-               pcolor = pkg.color;
+               let package = global.packages[pnospace];
+               pcolor = package.color;
             }
         }
         let nactivity = workflow.activities[nname];
@@ -35,8 +35,8 @@ for(let aname in workflow.activities) {
             npname = nactivity.package;
             npnospace = nactivity.package.replace(/\s/g, '');
             if(global.packages.hasOwnProperty(npnospace)) {
-               let pkg = global.packages[npnospace];
-               npcolor = pkg.color;
+               let package = global.packages[npnospace];
+               npcolor = package.color;
             }
         }
         let actName = `"${aname}"`;
