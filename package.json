@@ -1,6 +1,6 @@
 {
     "name": "ailtire",
-    "version": "0.30.0",
+    "version": "0.31.0",
     "description": "UML Architecture by coding and simulating system architectures.",
     "main": "index.js",
     "scripts": {
@@ -32,6 +32,7 @@
         "jsonwebtoken": "^9.0.2",
         "kafkajs": "^2.2.4",
         "keytar": "^7.9.0",
+        "marked": "^17.0.1",
         "minimatch": "^10.0.3",
         "multer": "latest",
         "openai": "^5.1.0",

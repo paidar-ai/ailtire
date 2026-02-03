@@ -34,6 +34,14 @@ module.exports = {
 
         APackage.load({dir:path.resolve(dir, 'api', 'Logical'), prefix: 'ailtire'});
         APackage.load({dir:path.resolve(dir, 'api')});
+
+        // Add the GenAI adaptors.
+        GenAIProvider.loadAll();
+        let provider = GenAIProvider.find({name: "default"});
+        if(!provider) {
+            provider = new GenAIProvider({name:"default", adaptorName:'ollama', defaultModelName:'llama-3.2'});
+            provider.save();
+        }
     }
 }
 
@@ -117,4 +125,16 @@ function _bootstrapAssociationClass(mdir) {
     obj.definition.methods = {};
     obj.definition.methods['add'] = methodAdd;
     obj.prototype["add"] = function(inputs) { return funcHandler.run(methodAdd, this, inputs); };
+}
+
+function _bootstrapBehaviors(rootPath) {
+
+    const directories = [
+        `${rootPath}/insights`,
+        `${rootPath}/guidance`,
+        `${rootPath}/practices`,
+    ];
+    for(let dir of directories) {
+        fs.mkdirSync(dir, {recursive: true});
+    }
 }

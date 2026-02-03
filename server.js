@@ -10,7 +10,9 @@ const BootStrap = require('./src/BootStrap');
 const program = require('./src/Command/subcommander');
 
 global.ailtire = {
-    baseDir: process.cwd(),
+    config: {
+        baseDir: process.cwd(),
+    },
     ai: {
         adaptor: AOpenAI,
         model: 'gpt-4o-mini',
@@ -21,25 +23,24 @@ let ailtireBaseDir = path.resolve(__dirname, '.');
 BootStrap.init(ailtireBaseDir);
 ARole.loadAll();
 AActor.loadAll({dir: path.resolve(ailtireBaseDir, "actors")});
-console.log(global.ailtire.config;.baseDir);
 console.log(ailtireBaseDir);
 // If the working directory is the same as the ailtire then do not load the application.
-if(ailtireBaseDir !== global.ailtire.config;.baseDir) {
-    AApplication.load({dir: global.ailtire.config;.baseDir});
+if(ailtireBaseDir !== global.ailtire.config.baseDir) {
+    AApplication.load({dir: global.ailtire.config.baseDir});
 } else {
     // global.topPackage = APackage.find({name:'ailtire'});
-    AApplication.load({dir: global.ailtire.config;.baseDir});
+    AApplication.load({dir: global.ailtire.config.baseDir});
     console.log("Skipping loading");
 }
 
 const server = require('./index.js');
 
 let host = process.env.AILTIRE_HOST || 'localhost';
-let port = process.env.AILTIRE_PORT || 80;
+let port = process.env.AILTIRE_PORT || 3003;
 let urlPrefix = process.env.AITIRE_BASEURL || '/web';
 let config = {
     name: 'ailtire',
-    authEnabled: true,
+    authEnabled: false,
     version: '1.0.0',
     baseDir: '.',
     host: host,

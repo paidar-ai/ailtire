@@ -22,7 +22,7 @@ module.exports = {
     exits: {},
 
     fn: function (inputs, env) {
-        let baseDir = global.ailtire.config;.baseDir;
+        let baseDir = global.ailtire.config.baseDir;
         let dir = path.resolve(baseDir, 'actors' );
         let files = {
             context: {

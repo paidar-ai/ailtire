@@ -6,6 +6,7 @@
     import GraphView from "./GraphView.svelte";
     import DocumentationView from "./DocumentationView.svelte";
     import Menu from "./Menu.svelte";
+    import GenAIView from "./GenAI/GenAIView.svelte";
 
     let currentView = "Graph";
 

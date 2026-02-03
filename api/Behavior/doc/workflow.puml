@@ -1,0 +1,40 @@
+@startuml
+title Create Team + Members + MCP + Resources + Guidance
+
+actor "Admin" as admin
+participant "ATeam" as team
+participant "ATeamMember" as tm
+participant "AIdentity" as id
+participant "AToolBox" as toolbox
+participant "ATool" as tool
+participant "AAIAgent" as agent
+participant "AResource" as res
+participant "AGuidance" as guidance
+
+admin -> team : create(name="Digital Transformation Team", goal="Manage DT content")
+team -> toolbox : setToolbox(toolbox)
+
+admin -> team : addMember(identity="alice", role="Lead Architect")
+team -> tm : create(team, identity, role)
+admin -> team : addMember(identity="bob", role="Research Analyst")
+team -> tm : create(team, identity, role)
+
+admin -> toolbox : addMcpServer(serverUrl="http://localhost:3000/mcp", createAgents=true)
+toolbox -> tool : create tools from MCP list
+toolbox -> agent : create AAIAgent per tool
+
+admin -> team : addResource(name="doc1.adoc", type="adoc", url=".../doc1.adoc")
+team -> res : create AResource
+admin -> team : addResource(name="doc2.adoc", type="adoc", url=".../doc2.adoc")
+team -> res : create AResource
+admin -> team : addResource(name="doc3.adoc", type="adoc", url=".../doc3.adoc")
+team -> res : create AResource
+admin -> team : addResource(name="doc4.adoc", type="adoc", url=".../doc4.adoc")
+team -> res : create AResource
+admin -> team : addResource(name="doc5.adoc", type="adoc", url=".../doc5.adoc")
+team -> res : create AResource
+
+admin -> guidance : create(goal="Manage whitepaper and lectures about the Digital Transformation Architect")
+guidance -> team : associate as owner
+
+@enduml

@@ -10,7 +10,7 @@ class AOpenAI extends AIAdaptor {
         }
         this.apiKey = config.apiKey;
         this.client = null;
-        this.model = config.model || 'gpt-4o-mini';
+        this.model = config.defaultModelName || 'gpt-4o-mini';
     }
 
     /**
@@ -30,10 +30,10 @@ class AOpenAI extends AIAdaptor {
             throw new Error("OpenAI client is not initialized. Call init() first.");
         }
 
-        // opts.audioChunk should be a Buffer with the FULL concatenated audio
-        const buffer = opts.audioChunk;
+        // opts.audio should be a Buffer with the FULL concatenated audio
+        const buffer = opts.audio;
         if (!Buffer.isBuffer(buffer)) {
-            throw new Error("opts.audioChunk must be a Buffer (full audio file).");
+            throw new Error("opts.audio must be a Buffer (full audio file).");
         }
 
         console.log('Sending audio buffer length:', buffer.length);
@@ -81,7 +81,7 @@ class AOpenAI extends AIAdaptor {
         if (!this.client) {
             throw new Error("OpenAI client is not initialized. Call init() first.");
         }
-        let model = opts.model || global.ailtire.config.ai.model || this.model;
+        let model = opts.model || this.model;
         if(!model) { model = this.model;}
         try {
             const completion = await this.client.chat.completions.create({

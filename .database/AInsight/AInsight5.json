@@ -1,0 +1,28 @@
+{
+  "id": "AInsight5",
+  "scopeKey": "global:default",
+  "insightType": "preference",
+  "subjectKey": "digital_transformation.summary",
+  "status": "active",
+  "valueKey": "",
+  "statement": "The user is interested in a detailed summary of digital transformation domains.",
+  "rationale": "The user prompt suggests they are looking for information on specific subjects.",
+  "confidence": 0.9,
+  "priority": 3,
+  "sources": [
+    {
+      "momentId": "AMoment4",
+      "ts": "2025-12-16T19:23:37.411Z"
+    },
+    {
+      "momentId": "AMoment4",
+      "ts": "2025-12-16T19:23:37.411Z"
+    }
+  ],
+  "lastUpdated": "2025-12-16T19:23:42.870Z",
+  "updatedAt": "2025-12-16T19:23:42.870Z",
+  "lastEvidence": {
+    "source": "user",
+    "quote": "[object Object],[object Object]"
+  }
+}

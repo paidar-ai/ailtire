@@ -95,7 +95,11 @@ module.exports = {
         return retval;
     },
     getClass: (className) => {
-        return _getClass(className);
+        if(className) {
+            return _getClass(className);
+        } else {
+            return null;
+        }
     },
     getInstances: (className) => {
         let cls = _getClass(className);

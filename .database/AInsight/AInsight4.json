@@ -1,0 +1,28 @@
+{
+  "id": "AInsight4",
+  "scopeKey": "global:default",
+  "insightType": "glossary",
+  "subjectKey": "digital_transformation.gear_domains",
+  "status": "active",
+  "valueKey": "",
+  "statement": "Define GEAR domains as part of digital transformation glossary.",
+  "rationale": "The assistant provided concise descriptions of each domain, indicating that they are significant concepts.",
+  "confidence": 1,
+  "priority": 5,
+  "sources": [
+    {
+      "momentId": "AMoment3",
+      "ts": "2025-12-13T18:18:45.126Z"
+    },
+    {
+      "momentId": "AMoment3",
+      "ts": "2025-12-13T18:18:45.126Z"
+    }
+  ],
+  "lastUpdated": "2025-12-13T18:18:54.385Z",
+  "updatedAt": "2025-12-13T18:18:54.385Z",
+  "lastEvidence": {
+    "source": "assistant",
+    "quote": "I can summarize each of the five GEAR domains concisely"
+  }
+}

@@ -1,4 +1,4 @@
-class AHint {
+class AGuidance {
     static definition = {
         name: 'AGuidance',
         description: 'A named grouping of hints (AHint) for an Actor and UseCase, The guidance helps ' +
@@ -6,8 +6,15 @@ class AHint {
             'accomplish the goal of the actor or usecases.',
         attributes: {
             id: {type: 'string', description: 'Guidance identifier.'},
-            description: {type: 'string', description: 'Human-readable description of the guidance.'},
+            title: {type: 'string', description: 'Short, human-friendly title for the guidance.'},
             goal: {type:"string", description: "Human-readable goal of the guidance."},
+            scope: {type: 'json', description: 'Scope or context for the guidance (team, project, topic).'},
+            deliverables: {type: 'json', description: 'Structured outputs to produce (whitepaper, lectures, slides, blogs).'},
+            workflow: {type: 'json', description: 'Ordered stages or steps for producing deliverables.'},
+            constraints: {type: 'json', description: 'Constraints for the guidance (counts, limits, bounds).'},
+            assignment: {type: 'json', description: 'Assignee and routing information for automated workflows.'},
+            channels: {type: 'json', description: 'Notification and response channels.'},
+            metadata: {type: 'json', description: 'Extension point for guidance-specific metadata.'},
         },
         associations: {
             owner: {
@@ -30,4 +37,4 @@ class AHint {
     }
 }
 
-module.exports = AHint;
+module.exports = AGuidance;

@@ -29,7 +29,7 @@ module.exports = {
 
     fn: function (inputs, env) {
 
-        let dir = inputs.dir || global.ailtire.config;.baseDir;
+        let dir = inputs.dir || global.ailtire.config.baseDir;
         if(fs.existsSync(dir)) {
             let models = getDirectories(dir);
             // Initialize the global actors.

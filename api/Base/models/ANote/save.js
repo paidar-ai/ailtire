@@ -19,7 +19,7 @@ module.exports = {
 
     fn: function (obj, inputs, env) {
         // inputs contains the obj for the this method.
-        let filename = path.resolve(global.ailtire.config;.baseDir, ".notes", obj.id + ".js");
+        let filename = path.resolve(global.ailtire.config.baseDir, ".notes", obj.id + ".js");
         let noteDef = {}
         for(let i in obj._attributes) {
             if(i !== 'id') {

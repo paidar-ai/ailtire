@@ -1,0 +1,26 @@
+{
+  "id": "AMoment2",
+  "timestamp": "2025-12-13T18:18:00.730Z",
+  "context": [
+    {
+      "role": "system",
+      "content": "You are AI Assistant. Respond concisely."
+    },
+    {
+      "role": "user",
+      "content": "There are 5 domains for GEAR: Strategic, Organizational, Process, Physical and Digital"
+    }
+  ],
+  "outcome": "Correct, the GEAR framework encompasses five domains: Strategic, Organizational, Process, Physical, and Digital. These domains guide government agencies in aligning their operations and technology to enhance public service delivery and efficiency.",
+  "analysis": {
+    "intent": "",
+    "topic": "GEAR framework",
+    "role_signal": "",
+    "preference_signals": [],
+    "constraint_signals": [],
+    "outcome": "needs_clarification",
+    "correction": false,
+    "signal": "confirmation",
+    "candidate_insights": []
+  }
+}

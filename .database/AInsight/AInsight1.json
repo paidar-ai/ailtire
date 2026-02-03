@@ -1,0 +1,28 @@
+{
+  "id": "AInsight1",
+  "scopeKey": "global:default",
+  "insightType": "glossary",
+  "subjectKey": "architecture.gear",
+  "status": "active",
+  "valueKey": "",
+  "statement": "GEAR is a framework for government digital transformation.",
+  "rationale": "The assistant provides a detailed definition of GEAR, confirming the user's implied query.",
+  "confidence": 0.9,
+  "priority": 3,
+  "sources": [
+    {
+      "momentId": "AMoment1",
+      "ts": "2025-12-13T18:16:01.905Z"
+    },
+    {
+      "momentId": "AMoment1",
+      "ts": "2025-12-13T18:16:01.905Z"
+    }
+  ],
+  "lastUpdated": "2025-12-13T18:16:19.441Z",
+  "updatedAt": "2025-12-13T18:16:19.441Z",
+  "lastEvidence": {
+    "source": "assistant",
+    "quote": "GEAR (Government Enterprise Architecture Reference) is indeed a framework designed to assist government agencies in their digital transformation efforts."
+  }
+}

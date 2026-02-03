@@ -9,5 +9,6 @@ module.exports = {
   },
   "roles": [
     "architect",
+    "architect"
   ]
 };

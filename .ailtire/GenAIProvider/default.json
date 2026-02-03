@@ -1,0 +1,7 @@
+{
+  "id": "GenAIProvider0",
+  "name": "default",
+  "adaptorName": "openai",
+  "defaultModelName": "gpt-4o-mini",
+  "apiKey": "sk-proj-vKwsS9SzzeVNbAQZgV1xT3BlbkFJQLSNPdMia0aIHh4QDIfz"
+}

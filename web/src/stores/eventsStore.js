@@ -57,3 +57,10 @@ export function fetchEvents() {
     });
     return eventNodes;
 }
+export function emitEvent(eventName, data) {
+    if (socket) {
+        socket.emit(eventName, data);
+    } else {
+        console.log("Emit: ", eventName, data);
+    }
+}

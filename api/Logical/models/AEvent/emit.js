@@ -1,4 +1,3 @@
-const AClass = require("../../../../src/Server/AClass");
 const Action = require("../../../../src/Server/Action");
 const funcHandler = require("../../../../src/Proxy/MethodProxy");
 module.exports = {
@@ -64,7 +63,7 @@ module.exports = {
 const callActions = async (event, data) => {
     // This is first class object assigned to a class.
     if (data.obj.hasOwnProperty('definition') && data.obj.hasOwnProperty('_attributes')) {
-        let cls = AClass.getClass({name:{name: data.obj.definition.name}});
+        let cls = AClass.getClass({name: data.obj.definition.name});
         data.obj = await cls.findDeep(data.obj._attributes.id);
     }
     // Ok now call the handlers.

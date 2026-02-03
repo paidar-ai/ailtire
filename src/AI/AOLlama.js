@@ -5,11 +5,8 @@ const execSync = require("child_process").execSync;
 class AOLlama extends AIAdaptor {
     constructor(config) {
         super();
-        if (!config.url) {
-            throw new Error("API URL is required to connect to the LLaMA server.");
-        }
-        this.apiUrl = config.url; // The server URL hosting the LLaMA model
-        this.model = config.model || 'llama3.2';
+        this.apiUrl = config.url || 'http://localhost:11434'; // The server URL hosting the LLaMA model
+        this.model = config.defaultModelName || 'llama3.2';
     }
 
     /**

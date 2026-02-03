@@ -74,7 +74,7 @@ module.exports = {
                 }
                 // Add the back link with via
                 if (obj.via) {
-                    newAssocObj[obj.via] = parent;
+                    newAssocObj[obj.via] = parent._proxy;
                 }
             }
             if(values.length === 1) {

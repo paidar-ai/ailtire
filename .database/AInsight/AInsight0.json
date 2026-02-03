@@ -1,0 +1,28 @@
+{
+  "id": "AInsight0",
+  "scopeKey": "global:default",
+  "insightType": "glossary",
+  "subjectKey": "graphics.gear",
+  "status": "active",
+  "valueKey": "",
+  "statement": "Define GEAR as Graphics Enhanced Active Rendering developed by Intel for enhancing graphics performance.",
+  "rationale": "The assistant provided a clear definition of GEAR in response to the inquiry.",
+  "confidence": 0.9,
+  "priority": 3,
+  "sources": [
+    {
+      "momentId": "AMoment0",
+      "ts": "2025-12-13T18:15:13.896Z"
+    },
+    {
+      "momentId": "AMoment0",
+      "ts": "2025-12-13T18:15:13.896Z"
+    }
+  ],
+  "lastUpdated": "2025-12-13T18:15:29.861Z",
+  "updatedAt": "2025-12-13T18:15:29.861Z",
+  "lastEvidence": {
+    "source": "assistant",
+    "quote": "GEAR (Graphics Enhanced Active Rendering) is a technology developed by Intel to enhance graphics performance and efficiency in computing systems."
+  }
+}

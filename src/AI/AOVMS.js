@@ -9,7 +9,7 @@ class AOVMS extends AIAdaptor {
             throw new Error("API URL is required to connect to the LLaMA server.");
         }
         this.apiUrl = config.url; // The server URL hosting the LLaMA model
-        this.model = config.model || 'model0'
+        this.model = config.defaultModelName || 'model0'
     }
 
     /**

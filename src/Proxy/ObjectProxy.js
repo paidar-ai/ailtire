@@ -227,7 +227,7 @@ function getHandler(obj, definition, prop) {
                     return stateNetHandler.processEvent(this, obj, prop, args);
                 } else {
                     let retval = funcHandler.run(definition.methods.create, this, args[0]);
-                    let json = this.toJSON;
+                    let json = this.toJSON();
                     AEvent.emit({event: definition.name + '.create', data: {obj: json}});
                     obj._persist = {dirty: true};
                     return retval;
@@ -245,7 +245,7 @@ function getHandler(obj, definition, prop) {
                                 return stateNetHandler.processEvent(this, obj, prop, args);
                             } else {
                                 let retval = funcHandler.run(myDef.methods.create, this, args[0]);
-                                let json = this.toJSON;
+                                let json = this.toJSON();
                                 AEvent.emit({event: definition.name + '.create', data: {obj: json}});
                                 return retval;
                             }
@@ -263,9 +263,9 @@ function getHandler(obj, definition, prop) {
                 if (hasStateNet(definition)) {
                     return stateNetHandler.processEvent(this, obj, prop, args);
                 } else {
-                    let json = this.toJSON;
                     try {
-                        if (!AEvent) {
+                        if (AEvent) {
+                            let json = this.toJSON();
                             AEvent.emit({event: definition.name + '.create', data: {obj: json}});
                         }
                     } catch (e) {

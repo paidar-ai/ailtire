@@ -22,7 +22,7 @@ module.exports = {
         let messages = [];
         messages.push({role: 'system', content: 'You are AI Assistant. Respond concisely.'});
         messages.push({role: 'user', content: inputs.prompt});
-        let retval = await AIHelper.ask(messages);
+        let retval = await AIHelper.ask(messages,env);
         return retval;
     }
 };

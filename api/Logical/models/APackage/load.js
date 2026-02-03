@@ -24,9 +24,15 @@ let reservedDirs = {
     },
     deploy: (package, prefix, dir) => {
     //    package = ADeployment.load(package, prefix, dir);
-    }, handlers: (package, prefix, dir) => {
+    },
+    handlers: (package, prefix, dir) => {
         // The Interface directory can be multiple directories deep which map to routes A/B/C
-        // package.handlers = AHandler.loadAll(package, prefix, dir);
+        if(AHandlers) {
+            let handlers = AHandlers.loadAll({package: package});
+            if(handlers) {
+                package.handlers = handlers;
+            }
+        }
     },
     interface: (package, prefix, dir) => {
         //The Interface directory can be multiple directories deep which map to routes A/B/C

@@ -55,14 +55,14 @@ module.exports = {
         for (let i in config.routes) {
             // Get Action handler from the actions.
             // let routeTarget = config.routes[i];
-            if(config.routes[i].includes('layouts')) {
-                   server.all(`/${config.routes[i]}`, (req, res) => {
-                        let layout = config.routes[i].split('/')[1];  
-                        return Renderer.render(layout, './index', {
-                            app:{name: config.name},
-                            name: config.name
-                        });
-                   }); 
+            if (config.routes[i].includes('layouts')) {
+                server.all(`/${config.routes[i]}`, (req, res) => {
+                    let layout = config.routes[i].split('/')[1];
+                    return Renderer.render(layout, './index', {
+                        app: {name: config.name},
+                        name: config.name
+                    });
+                });
             } else {
                 let route = config.urlPrefix + '/' + i.toLowerCase();
                 let action = find(config.routes[i]);
@@ -94,6 +94,7 @@ module.exports = {
     }
 };
 
+
 // Add ServiceProxy here.
 const mergeMaps = (target, source) => {
     if (!target) {
@@ -124,7 +125,7 @@ const addForModels = (server) => {
     const addAction = require('./actions/add.js');
     let act;
     for (let name in global.classes) {
-        let cls = AClass.getClass({name:name});
+        let cls = AClass.getClass({name: name});
         act = setAction(`/${name}/new`, newAction);
 
         act.obj = cls.definition.name;
@@ -267,21 +268,23 @@ const loadActions = (prefix, mDir) => {
 const mapToServer = (server, config) => {
     // let's iterate over all of the interface of the application and add them to the path
     let interfaces = _instances.AInterface;
-    for(let i in interfaces) {
+    for (let i in interfaces) {
         let gaction = interfaces[i];
         let normalizedName = gaction.path;
-        if (!normalizedName.startsWith('/')) { normalizedName = '/' + normalizedName; }
+        if (!normalizedName.startsWith('/')) {
+            normalizedName = '/' + normalizedName;
+        }
         _updateRESTRoutes(server, normalizedName, gaction);
 
         if (config.hasOwnProperty('urlPrefix')) {
             normalizedName += config.urlPrefix + normalizedName;
             _updateRESTRoutes(server, normalizedName, gaction);
         }
-        if(config.mcp) {
+        if (config.mcp) {
             _addMCPTool(config.mcpServer, gaction);
         }
     }
-    if(config.mcp) {
+    if (config.mcp) {
         _addMCPRoutes(server, config.mcpServer);
     }
 };
@@ -293,7 +296,7 @@ function _addMCPRoutes(server, mcpServer) {
         let entry = sessions.get(sessionId);
         if (entry) return entry;
 
-        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => sessionId });
+        const transport = new StreamableHTTPServerTransport({sessionIdGenerator: () => sessionId});
 
         // Connect once; reuse for all requests with this session
         await mcpServer.connect(transport);
@@ -301,7 +304,10 @@ function _addMCPRoutes(server, mcpServer) {
         entry = {
             transport,
             close: () => {
-                try { transport.close(); } catch {}
+                try {
+                    transport.close();
+                } catch {
+                }
                 sessions.delete(sessionId);
             },
         };
@@ -312,14 +318,17 @@ function _addMCPRoutes(server, mcpServer) {
     server.post("/mcp", async (req, res) => {
         try {
             const sid = req.header("Mcp-Session-Id") || "default-session";
-            const { transport } = await ensureSessionTransport(sid);
+            const {transport} = await ensureSessionTransport(sid);
 
             // MCP transport requires client to accept JSON + SSE (even if not streaming)
             if (!req.headers.accept?.includes("application/json") || !req.headers.accept?.includes("text/event-stream")) {
                 return res.status(406).json({
                     jsonrpc: "2.0",
                     id: null,
-                    error: { code: -32000, message: "Not Acceptable: Client must accept both application/json and text/event-stream" },
+                    error: {
+                        code: -32000,
+                        message: "Not Acceptable: Client must accept both application/json and text/event-stream"
+                    },
                 });
             }
 
@@ -327,7 +336,11 @@ function _addMCPRoutes(server, mcpServer) {
         } catch (err) {
             console.error("MCP /mcp error:", err);
             if (!res.headersSent) {
-                res.status(500).json({ jsonrpc: "2.0", id: null, error: { code: -32603, message: "Internal server error" } });
+                res.status(500).json({
+                    jsonrpc: "2.0",
+                    id: null,
+                    error: {code: -32603, message: "Internal server error"}
+                });
             }
         }
     });
@@ -335,7 +348,7 @@ function _addMCPRoutes(server, mcpServer) {
     server.get("/mcp/notifications", async (req, res) => {
         try {
             const sid = req.header("Mcp-Session-Id") || "default-session";
-            const { transport } = await ensureSessionTransport(sid);
+            const {transport} = await ensureSessionTransport(sid);
             await transport.handleSse(req, res);
         } catch (err) {
             console.error("MCP /mcp/notifications error:", err);
@@ -350,22 +363,21 @@ function _addMCPRoutes(server, mcpServer) {
             entry.close();
             return res.status(204).end();
         }
-        return res.status(404).json({ error: "Session not found" });
+        return res.status(404).json({error: "Session not found"});
     });
 }
 
 function _addMCPTool(mcpServer, interface) {
 
-    if(interface.path === '/ailtire/model/list') {
-        console.log('adding model list');
+    if (interface.path === '/ailtire/model/list') {
     }
     let def = {
         description: interface.description,
     }
-    if(interface.inputs) {
+    if (interface.inputs) {
         def.inputSchema = toZodObject(interface.inputs);
     }
-    if(interface.outputs) {
+    if (interface.outputs) {
         def.outputSchema = toZodObject({retval: interface.outputs});
     }
     try {
@@ -381,9 +393,8 @@ function _addMCPTool(mcpServer, interface) {
             }
 
         })
-    }
-    catch(err) {
-       // console.error("Register Tool Error:", err);
+    } catch (err) {
+        // console.error("Register Tool Error:", err);
     }
 }
 
@@ -394,7 +405,7 @@ function toZodObject(inputs, title) {
 
         // Map custom types into valid Zod types
         let zodType;
-        if(type) {
+        if (type) {
             switch (type.toLowerCase()) {
                 case 'json':
                     zodType = z.object({}).passthrough();
@@ -413,8 +424,7 @@ function toZodObject(inputs, title) {
                     zodType = z.boolean();
                     break;
                 case 'array':
-                    console.log('array', name);
-                    if(properties && typeof properties === 'object') {
+                    if (properties && typeof properties === 'object') {
                         const shape = toZodObject(properties);
                         zodType = z.array(z.object(shape));
                     } else {
@@ -422,7 +432,7 @@ function toZodObject(inputs, title) {
                     }
                     break;
                 case 'object':
-                    if(properties && typeof properties === 'object') {
+                    if (properties && typeof properties === 'object') {
                         const shape = toZodObject(properties);
                         zodType = z.object(shape);
                     } else {
@@ -450,13 +460,12 @@ function toZodObject(inputs, title) {
             schema[name] = required ? zodType : zodType.optional();
         }
     }
-    
+
     return schema;
 }
 
 function _updateRESTRoutes(server, path, action) {
-    console.log('Adding route', path);
-    if(path.includes('/upload')) {
+    if (path.includes('/upload')) {
         server.post('*' + path, async (req, res) => {
             req.url = req.url.replace(config.urlPrefix, '');
             await upload(action, req.query, {req: req, res: res});
@@ -596,20 +605,20 @@ function _processReturn(action, payload, env) {
         const ex = action.exits[key];
         // If developer provided a single fn, convert to object shorthand
         if (typeof ex === 'function') {
-            action.exits[key] = { cli: ex, rest: ex, mcp: ex };
+            action.exits[key] = {cli: ex, rest: ex, mcp: ex};
         }
         // Otherwise assume it’s already an object and fill missing branches
-        action.exits[key].cli  = action.exits[key].cli  || (x => x);
+        action.exits[key].cli = action.exits[key].cli || (x => x);
         action.exits[key].rest = action.exits[key].rest || (x => x);
-        action.exits[key].mcp  = action.exits[key].mcp  || (x => ({ jsonrpc:"2.0", id:null, result:x }));
+        action.exits[key].mcp = action.exits[key].mcp || (x => ({jsonrpc: "2.0", id: null, result: x}));
     }
 
     // Guarantee a “success” exit
     if (!action.exits.success) {
         action.exits.success = {
-            cli:  x => x,
+            cli: x => x,
             rest: x => x,
-            mcp:  x => ({ jsonrpc:"2.0", id:null, result:x })
+            mcp: x => ({jsonrpc: "2.0", id: null, result: x})
         };
     }
 
@@ -627,7 +636,7 @@ function _processReturn(action, payload, env) {
     if (mode === 'rest' && env.res && !env.res.headersSent) {
         return env.res.json(out);
     }
-    if (mode === 'mcp'  && env.res && !env.res.headersSent) {
+    if (mode === 'mcp' && env.res && !env.res.headersSent) {
         return env.res.json(out);
     }
     // cli or direct caller
@@ -636,50 +645,54 @@ function _processReturn(action, payload, env) {
 
 const authorize = (action, env) => {
 
-    if(!ailtire.config.authEnabled) return;
+    if (!ailtire.config.authEnabled) return;
 
     const mode = env.isMcp ? 'mcp' : env.res ? 'rest' : 'cli';
     const key = action.path;
     const perms = env.actor.permissions || {};
 
     const allowed = perms.some(pat => {
-        if(pat === '*') return true;
+        if (pat === '*') return true;
         return minimatch(key, pat);
     });
-    if(!allowed) {
+    if (!allowed) {
         throw new AppError.Forbidden(`Missing permission: ${key}`);
     }
 }
 const _executeFunction = async (action, inputs, env) => {
 
     try {
-    if(ailtire?.config?.authEnabled) {
-        if(!env.req.url.includes('/auth/')) {
-            // Authenticate the user
-            await protocols.authenticate(env);
+        if (ailtire?.config?.authEnabled) {
+            if (!env.req.url.includes('/auth/')) {
+                // Authenticate the user
+                await protocols.authenticate(env);
 
 
-            authorize(action, env);
+                authorize(action, env);
+            }
+        } else {
+            if (env && AIdentity) {
+                let identities = await AIdentity.createDevIdentities();
+                env.actor = identities[0];
+            }
         }
-    }
 
-    // 2b) Policy checks
-    if(global.policies) {
-        for (let policy of global.policies) {
-            if (policy.appliesTo.some(p => match(p, action.permissionKey))) {
-                for (let ruleFn of Object.values(policy.rules)) {
-                    if (!await ruleFn(env.actor, action.permissionKey, inputs, env)) {
-                        throw new AError.Forbidden(`Policy ${policy.name} blocked ${action.permissionKey}`);
+        // 2b) Policy checks
+        if (global.policies) {
+            for (let policy of global.policies) {
+                if (policy.appliesTo.some(p => match(p, action.permissionKey))) {
+                    for (let ruleFn of Object.values(policy.rules)) {
+                        if (!await ruleFn(env.actor, action.permissionKey, inputs, env)) {
+                            throw new AError.Forbidden(`Policy ${policy.name} blocked ${action.permissionKey}`);
+                        }
                     }
                 }
             }
         }
-    }
 
 
-
-    // Default is to pass on the inputs.
-    let retval = inputs;
+        // Default is to pass on the inputs.
+        let retval = inputs;
         if (action.fn.constructor.name === 'AsyncFunction') {
             return (async () => {
                 try {
@@ -706,11 +719,17 @@ function _processError(action, err, env) {
     for (const key of Object.keys(action.exits)) {
         const ex = action.exits[key];
         if (typeof ex === 'function') {
-            action.exits[key] = { cli: ex, rest: ex, mcp: ex };
+            action.exits[key] = {cli: ex, rest: ex, mcp: ex};
         }
-        action.exits[key].cli  = action.exits[key].cli  || (e => { throw e; });
-        action.exits[key].rest = action.exits[key].rest || (e => ({ error: e.message }));
-        action.exits[key].mcp  = action.exits[key].mcp  || (e => ({ jsonrpc:"2.0", id:null, error:{ code:e.rpcCode||-32000, message:e.message }}));
+        action.exits[key].cli = action.exits[key].cli || (e => {
+            throw e;
+        });
+        action.exits[key].rest = action.exits[key].rest || (e => ({error: e.message}));
+        action.exits[key].mcp = action.exits[key].mcp || (e => ({
+            jsonrpc: "2.0",
+            id: null,
+            error: {code: e.rpcCode || -32000, message: e.message}
+        }));
     }
 
     // Pick exit key by err.exit or err.name, else “error”
@@ -726,7 +745,7 @@ function _processError(action, err, env) {
 
     // Invoke the serializer
     let out = err;
-    if(action.exits && action.exits.hasOwnProperty(exitKey) && action.exits[exitKey].hasOwnProperty(mode)) {
+    if (action.exits && action.exits.hasOwnProperty(exitKey) && action.exits[exitKey].hasOwnProperty(mode)) {
         out = action.exits[exitKey][mode](err);
     }
 
@@ -736,7 +755,7 @@ function _processError(action, err, env) {
         env.res.status(status).json(out);
         return;
     }
-    if (mode === 'mcp'  && env.res && !env.res.headersSent) {
+    if (mode === 'mcp' && env.res && !env.res.headersSent) {
         const status = err.httpStatus || 500;
         env.res.status(status).json(out);
         return;
@@ -748,8 +767,8 @@ function _processError(action, err, env) {
 
 const find = (name) => {
     const AClass = require('./AClass');
-    if(typeof name !== "string") {
-       console.error("String should be here:", name) ;
+    if (typeof name !== "string") {
+        console.error("String should be here:", name);
     }
     name = name.toLowerCase();
     // If you match the action name directly return.
@@ -770,7 +789,7 @@ const find = (name) => {
             // Look for automatic actions like create, destroy, etc.
             // First look if the first name is a class. If it is then check the methods on the class.
             // If it is available then return that action.
-            let cls = AClass.getClass({name:items[0]});
+            let cls = AClass.getClass({name: items[0]});
             if (cls) {
                 if (cls.definition.methods.hasOwnProperty(items[1])) {
                     let retval = cls.definition.methods[items[1]];

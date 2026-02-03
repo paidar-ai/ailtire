@@ -5,11 +5,14 @@ const BootStrap = require('../src/BootStrap');
 const program = require('../src/Command/subcommander');
 
 global.ailtire = {
-    baseDir: process.cwd(),
-    ai: {
-        adaptor: AOpenAI,
-        model: 'gpt-4o-mini',
-        apiKey: process.env.AILTIRE_OPENAI_KEY,
+    config: {
+        baseDir: process.cwd(),
+        ai: {
+            adaptor: AOpenAI,
+            model: 'gpt-4o-mini',
+            apiKey: process.env.AILTIRE_OPENAI_KEY,
+        },
+        authEnabled: false,
     }
 };
 let ailtireBaseDir = path.resolve(__dirname, '..');
@@ -18,8 +21,8 @@ ARole.loadAll();
 AActor.loadAll({dir: path.resolve(ailtireBaseDir, "actors")});
 
 // If the working directory is the same as the ailtire then do not load the application.
-if(ailtireBaseDir !== global.ailtire.config;.baseDir) {
-    AApplication.load({dir: global.ailtire.config;.baseDir});
+if(ailtireBaseDir !== global.ailtire.config.baseDir) {
+    AApplication.load({dir: global.ailtire.config.baseDir});
 } else {
     console.log("Skipping loading");
 }
