@@ -2,6 +2,5 @@
   "id": "GenAIProvider0",
   "name": "default",
   "adaptorName": "openai",
-  "defaultModelName": "gpt-4o-mini",
-  "apiKey": ""
+  "defaultModelName": "gpt-4o-mini"
 }
