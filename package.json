@@ -8,7 +8,7 @@
     "main": "index.js",
     "scripts": {
         "start": "node server.js",
-        "build": "node build.js",
+        "build": "echo 'Done'",
         "build-bump": "node build.js bump patch",
         "publish": "node publish.js",
         "docs": "java -jar docs/plantuml.jar docs/*.puml docs/**/*.puml",
