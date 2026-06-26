@@ -3,6 +3,7 @@ const path = require('path');
 const AOpenAI = require('../src/AI/AOpenAI');
 const BootStrap = require('../src/BootStrap');
 const program = require('../src/Command/subcommander');
+const fs = require('fs');
 
 global.ailtire = {
     baseDir: process.cwd(),
@@ -14,14 +15,15 @@ global.ailtire = {
 };
 let ailtireBaseDir = path.resolve(__dirname, '..');
 BootStrap.init(ailtireBaseDir);
-ARole.loadAll();
-AActor.loadAll({dir: path.resolve(ailtireBaseDir, "actors")});
+const appRoot = path.resolve(global.ailtire.baseDir, 'api', 'Logical', 'index.js');
+global.ailtire.hasApp = fs.existsSync(appRoot);
 
-// If the working directory is the same as the ailtire then do not load the application.
-if(ailtireBaseDir !== global.ailtire.baseDir) {
-    AApplication.load({dir: global.ailtire.baseDir});
-} else {
-    console.log("Skipping loading");
+if (global.ailtire.hasApp) {
+    ARole.loadAll();
+    AActor.loadAll({dir: path.resolve(global.ailtire.baseDir, "actors")});
+    if (ailtireBaseDir !== global.ailtire.baseDir) {
+        AApplication.load({dir: global.ailtire.baseDir});
+    }
 }
 program.execute(__dirname);
 

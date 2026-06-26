@@ -41,7 +41,11 @@ module.exports = {
         let fullPath = process.argv[1];
         let program = path.basename(fullPath);
         baseDir = binDir;
-        _normalizeInterface();
+        if (_hasAppContext()) {
+            _normalizeInterface();
+        } else {
+            global.interface = global.interface || {};
+        }
         await _executeCommand(program, args);
     }
 }
@@ -55,6 +59,22 @@ const _executeCommand = async (program, args) => {
         }
     }
     if (commands.length > 0) {
+        if (!_hasAppContext()) {
+            if (commands[0] === 'version') {
+                _helpVersion();
+                return;
+            }
+            if (commands[0] === 'help') {
+                _helpTopLevel(program);
+                return;
+            }
+            if (commands[0] === 'app' && commands[1] === 'create') {
+                await _runBuiltInAppCreate(args);
+                return;
+            }
+            _helpNoApp(program);
+            return;
+        }
         await _runCommand(program, commands, args);
     } else {
         if (args.includes('--version') || args.includes('-v')) {
@@ -87,13 +107,29 @@ const _helpGetCommands = (program, topDir) => {
 }
 const _helpTopLevel = (program) => {
     let helpString = `Usage: ${program} [cmd]\n`;
-    for (let i in _commands) {
-        helpString += `\t${i} [cmd] <args>\n`;
+    if (_hasAppContext()) {
+        for (let i in _commands) {
+            helpString += `\t${i} [cmd] <args>\n`;
+        }
+    } else {
+        helpString += `\tapp create --name <string> [--dir <string>]\n`;
+        helpString += `\tversion\n`;
+        helpString += `\thelp\n`;
     }
     helpString += '\n';
     console.log(helpString);
     process.exit(0);
 }
+
+const _helpNoApp = (program) => {
+    console.error(`No Ailtire application found in ${global.ailtire.baseDir}.`);
+    console.error(`Run "${program} app create --name <name>" or change to a root Ailtire application directory.`);
+    process.exit(1);
+};
+
+const _hasAppContext = () => {
+    return Boolean(global.ailtire?.hasApp);
+};
 
 function _existsDir(dir) {
     try {
@@ -407,6 +443,25 @@ const _helpVersion = () => {
     console.log(project.version);
     process.exit(0);
 }
+
+const _runBuiltInAppCreate = async (args) => {
+    const action = require(path.resolve(__dirname, '../../api/interface/app/create.js'));
+    const params = _getParameters(args);
+    if (params.hasOwnProperty('help')) {
+        _helpCommand(action);
+        return;
+    }
+    for (let iname in action.inputs) {
+        if (action.inputs[iname].required && !params[iname]) {
+            _helpCommand(action);
+            return;
+        }
+    }
+    const retval = await action.fn(params, {});
+    if (retval) {
+        console.log(retval);
+    }
+};
 const _findAction = (commands, args, topDir) => {
 
     let retval = null;
