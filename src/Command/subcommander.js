@@ -29,7 +29,6 @@ function _loadCliTokenEnv(env) {
   }
 }
 
-const {command} = require("mocha/lib/cli/run");
 const readline = require("readline");
 const AIHelper = require("../Server/AIHelper");
 
