@@ -6,6 +6,7 @@ const funcHandler = require('./MethodProxy');
 const stateNetHandler = require('./StateNetProxy');
 const path = require("path");
 const fs = require("fs");
+const axios = require('axios');
 
 module.exports = {
     get: (obj, prop) => {
@@ -13,7 +14,13 @@ module.exports = {
         // Initialize the object
 
         _initalize(obj);
-        if (prop[0] === '_') {
+        if (typeof prop === 'string' && prop[0] === '_') {
+            if (Object.prototype.hasOwnProperty.call(obj, prop)) {
+                return obj[prop];
+            }
+            if (obj._attributes && Object.prototype.hasOwnProperty.call(obj._attributes, prop)) {
+                return obj._attributes[prop];
+            }
             return obj[prop];
         }
         if (prop === 'isProxy') {
@@ -40,8 +47,8 @@ module.exports = {
             if (prop === "_presist") {
                 return obj._persist;
             }
-            if (prop[0] === '_') { // This is a private  transient attribute.
-                return obj[prop];
+            if (typeof prop === 'string' && prop[0] === '_') { // This is a private  transient attribute.
+                return obj._attributes[prop];
             }
             return getHandler(obj, definition, prop);
         } catch (e) {
@@ -52,7 +59,7 @@ module.exports = {
     set: (obj, prop, value) => {
         _initalize(obj);
         if (prop[0] === '_') {
-            return obj[prop] = value;
+            return obj._attributes[prop] = value;
         }
         if (obj._persist._notLoaded) {
             _load(obj, []);
@@ -97,6 +104,10 @@ module.exports = {
                     return myAssoc.add({parent: obj, item: value});
                 }
             }
+        }
+        if (obj._persist && obj._persist.service) {
+            obj._attributes[prop] = value;
+            return true;
         }
         return true;
     },
@@ -177,6 +188,10 @@ function getHandler(obj, definition, prop) {
     } else if (addToRegex.test(prop)) {
         return function (...args) {
             const simpleProp = prop.replace(addToRegex, '').toLowerCase();
+            let assoc = getAssociation(obj.definition, simpleProp);
+            if (assoc && assoc.service) {
+                return _remoteCall(obj, assoc, 'add', args[0]);
+            }
             let retval = addToAssoc(simpleProp, obj, this, args[0]);
             if (definition.methods.hasOwnProperty('add')) {
                 retval = funcHandler.run(definition.methods['add'], this, args[0]);
@@ -188,6 +203,10 @@ function getHandler(obj, definition, prop) {
     } else if (removeFromRegex.test(prop)) {
         return function (...args) {
             const simpleProp = prop.replace(removeFromRegex, '').toLowerCase();
+            let assoc = getAssociation(obj.definition, simpleProp);
+            if (assoc && assoc.service) {
+                return _remoteCall(obj, assoc, 'remove', args[0]);
+            }
             if (!obj._associations.hasOwnProperty(simpleProp)) {
                 return false;
             }
@@ -227,7 +246,7 @@ function getHandler(obj, definition, prop) {
                     return stateNetHandler.processEvent(this, obj, prop, args);
                 } else {
                     let retval = funcHandler.run(definition.methods.create, this, args[0]);
-                    let json = this.toJSON();
+                    let json = this.toJSON;
                     AEvent.emit({event: definition.name + '.create', data: {obj: json}});
                     obj._persist = {dirty: true};
                     return retval;
@@ -245,7 +264,7 @@ function getHandler(obj, definition, prop) {
                                 return stateNetHandler.processEvent(this, obj, prop, args);
                             } else {
                                 let retval = funcHandler.run(myDef.methods.create, this, args[0]);
-                                let json = this.toJSON();
+                                let json = this.toJSON;
                                 AEvent.emit({event: definition.name + '.create', data: {obj: json}});
                                 return retval;
                             }
@@ -263,9 +282,9 @@ function getHandler(obj, definition, prop) {
                 if (hasStateNet(definition)) {
                     return stateNetHandler.processEvent(this, obj, prop, args);
                 } else {
+                    let json = this.toJSON;
                     try {
-                        if (AEvent) {
-                            let json = this.toJSON();
+                        if (!AEvent) {
                             AEvent.emit({event: definition.name + '.create', data: {obj: json}});
                         }
                     } catch (e) {
@@ -305,17 +324,37 @@ function getHandler(obj, definition, prop) {
 
             return true;
         }
-    } else if (obj._attributes.hasOwnProperty(prop)) {
+    } else if (obj.definition.attributes.hasOwnProperty(prop)) {
+        let attr = obj.definition.attributes[prop];
+        if(Object.prototype.hasOwnProperty.call(obj._attributes, prop)) {
+            return obj._attributes[prop];
+        }
+        if (attr.type === 'file' || attr.type === 'blob') {
+            return _loadAttribute(obj, prop);
+        }
+        return null;
+    } else if (Object.prototype.hasOwnProperty.call(obj._attributes, prop)) {
         return obj._attributes[prop];
         // Check if the attribute definition is defined if so then return null
-    } else if (obj.definition.attributes.hasOwnProperty(prop)) {
-        return null;
     } else if (obj._associations.hasOwnProperty(prop)) {
         // Add check to see if the association is loaded.
 
         let assocDef = getAssociation(obj.definition, prop);
+        if (assocDef.service) {
+            if (obj._persist && obj._persist.depth >= 1) {
+                return obj._attributes[prop] || null;
+            }
+            return _createRemoteProxy(obj, assocDef);
+        }
         if (assocDef.cardinality !== 'n') {
             let retval = obj._associations[prop];
+            if (typeof retval === 'string') {
+                const childClass = AClass.getClass({name: assocDef.type});
+                if (childClass) {
+                    retval = new childClass({id: retval, _loading: true});
+                    obj._associations[prop] = retval;
+                }
+            }
             // Could return a null.
             if (retval) {
                 if (retval._persist?.hasOwnProperty('_notLoaded') && retval._persist._notLoaded) {
@@ -333,6 +372,13 @@ function getHandler(obj, definition, prop) {
             let retval = obj._associations[prop];
             for (let i in retval) {
                 let item = retval[i];
+                if (typeof item === 'string') {
+                    const childClass = AClass.getClass({name: assocDef.type});
+                    if (childClass) {
+                        item = new childClass({id: item, _loading: true});
+                        retval[i] = item;
+                    }
+                }
                 if (item && item._persist?.hasOwnProperty("_notLoaded") && item._persist?._notLoaded) {
                     let promise = _load(item, []).then(loaded => {
                         obj._associations[prop][i] = loaded; // Cache resolved item
@@ -347,7 +393,14 @@ function getHandler(obj, definition, prop) {
         }
         // Check if the association definition is defined if so then return an empty array or null
     } else if (hasAssociation(obj.definition, prop)) {
-        if (getAssociation(obj.definition, prop).cardinality === 1) {
+        let assoc = getAssociation(obj.definition, prop);
+        if (assoc.service) {
+            if (obj._persist && obj._persist.depth >= 1) {
+                return obj._attributes[prop] || null;
+            }
+            return _createRemoteProxy(obj, assoc);
+        }
+        if (assoc.cardinality === 1) {
             return null;
         } else {
             // return an empty array
@@ -363,8 +416,16 @@ function getHandler(obj, definition, prop) {
         }
         // If there is an extends then you need to check the parent stateenet.
     } else if (prop === 'then') {
-        return new Promise(resolve => resolve(obj));
+        return undefined;
     } else if (prop === 'save') {
+        if (obj._persist && obj._persist.service) {
+            return async () => {
+                const serviceURL = _resolveServiceURL(obj._persist.service);
+                const url = `${serviceURL}/${obj.definition.name}/save`;
+                const response = await axios.post(url, obj._attributes);
+                return response.data;
+            };
+        }
         if (definition.methods.hasOwnProperty('save')) {
             return function (...args) {
                 let retval = funcHandler.run(definition.methods[prop], this, args[0]);
@@ -437,9 +498,15 @@ function getHandler(obj, definition, prop) {
             return _aiUpdate(obj, args[0]);
         }
     } else {
+        if (obj._persist && obj._persist.service) {
+            return (...args) => {
+                const serviceURL = _resolveServiceURL(obj._persist.service);
+                const url = `${serviceURL}/${obj.definition.name}/${prop}`;
+                return axios.post(url, {id: obj._attributes.id || obj._attributes.name, args: args})
+                    .then(res => res.data);
+            };
+        }
         return null;
-        console.error(`Error could not find ${prop} on ${obj}`);
-        throw new Error(`Could not find ${prop}! on ${obj}`);
     }
 }
 
@@ -689,18 +756,18 @@ function _toJSON(obj) {
 
 function _createTransparentProxy(promise) {
     return new Proxy(
-        {},
+        promise,
         {
-            get: (_, prop) => {
-                return (...args) => {
-                    // Chain promise resolution to access the final property/method
-                    return promise.then(resolved => {
-                        if (typeof resolved[prop] === 'function') {
-                            return resolved[prop](...args); // Call resolved method
-                        }
-                        return resolved[prop]; // Return resolved property
-                    });
-                };
+            get: (target, prop) => {
+                if (prop === 'then' || prop === 'catch' || prop === 'finally') {
+                    return target[prop].bind(target);
+                }
+                return promise.then(resolved => {
+                    if (resolved && typeof resolved[prop] === 'function') {
+                        return resolved[prop].bind(resolved);
+                    }
+                    return resolved?.[prop];
+                });
             },
         }
     );
@@ -811,4 +878,102 @@ async function _aiUpdate(obj, inputs) {
     obj.save();
 
     return obj;
+}
+
+async function _loadAttribute(obj, prop) {
+    if (Object.prototype.hasOwnProperty.call(obj._attributes, prop)) return obj._attributes[prop]; // Already loading or loaded
+
+    if (global.storage && global.storage.loadAttribute) {
+        const promise = global.storage.loadAttribute(obj._proxy, prop).then(content => {
+            obj._attributes[prop] = content;
+            return content;
+        });
+        obj._attributes[prop] = promise;
+        return promise;
+    }
+    return null;
+}
+
+function _resolveServiceURL(serviceName) {
+    if (global.ailtire?.config?.services?.[serviceName]) {
+        let s = global.ailtire.config.services[serviceName];
+        return `${s.protocol || 'http'}://${s.host || serviceName}:${s.port || 3000}`;
+    }
+    // Fallback to just http://serviceName:3000 (common in Docker)
+    return `http://${serviceName}:3000`;
+}
+
+async function _remoteCall(obj, assoc, action, item) {
+    const serviceURL = _resolveServiceURL(assoc.service);
+    const modelName = obj.definition.name;
+    const id = obj._attributes.id || obj._attributes.name;
+    const assocName = assoc.name;
+    const assocUpper = assocName[0].toUpperCase() + assocName.slice(1);
+
+    if (action === 'add' || action === 'remove') {
+        const url = `${serviceURL}/${modelName}/${action === 'add' ? 'add' : 'removeFrom'}${assocUpper}`;
+        const items = item.id || (item._attributes ? item._attributes.id : item);
+        const response = await axios.post(url, {name: id, items: items});
+        return response.data;
+    } else if (action === 'list') {
+        let url, params;
+        if (assoc.via) {
+            // If via is defined, query the target model directly
+            url = `${serviceURL}/${assoc.type}`;
+            params = { [assoc.via]: id };
+        } else {
+            // Fallback to querying the parent model's association
+            url = `${serviceURL}/${modelName}`;
+            params = { id: id };
+        }
+
+        const response = await axios.get(url, { params });
+        
+        // Handle standard ailtire list response
+        let records = [];
+        if (response.data) {
+            if (response.data.records) records = response.data.records;
+            else if (response.data.record && response.data.record[assocName]) {
+                let val = response.data.record[assocName];
+                records = val.values || val;
+            }
+            else if (Array.isArray(response.data)) records = response.data;
+            else if (response.data.record) records = response.data.record;
+            else records = response.data;
+        }
+
+        const depth = ((obj._persist && obj._persist.depth) ? obj._persist.depth : 0) + 1;
+        const wrap = (itemData) => _wrapRemoteObject(itemData, assoc.type, assoc.service, depth);
+
+        if (assoc.cardinality === 'n') {
+            return Array.isArray(records) ? records.map(wrap) : [wrap(records)];
+        } else {
+            return Array.isArray(records) ? (records.length > 0 ? wrap(records[0]) : null) : wrap(records);
+        }
+    }
+}
+
+function _createRemoteProxy(obj, assoc) {
+    let promise = _remoteCall(obj, assoc, 'list');
+    return _createTransparentProxy(promise);
+}
+
+function _wrapRemoteObject(data, type, service, depth = 1) {
+    let cls = AClass.getClass({name: type});
+    let definition = cls ? cls.definition : {
+        name: type,
+        attributes: {},
+        associations: {},
+        methods: {}
+    };
+
+    let obj = {
+        _attributes: data,
+        _associations: {},
+        _persist: {service: service, _clsName: type, depth: depth},
+        definition: definition
+    };
+
+    const handler = require('./ObjectProxy');
+    return new Proxy(obj, handler);
 }

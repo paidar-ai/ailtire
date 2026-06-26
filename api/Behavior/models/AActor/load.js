@@ -26,7 +26,7 @@ module.exports = {
         let fname = inputs.file;
         if (!fname) {
             let name = inputs.name;
-            let baseDir = inputs.dir || global.ailtire.config.baseDir;
+            let baseDir = inputs.dir || global.ailtire.baseDir;
             fname = path.resolve(baseDir, name, 'index.js');
         }
         let dir = path.dirname(fname);

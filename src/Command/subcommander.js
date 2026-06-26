@@ -189,14 +189,12 @@ const _executeAction = async (actionObj, args) => {
     }
     if(actionObj.path !== '/ailtire/auth/login' && actionObj.path !== '/ailtire/auth/register') {
         const env = {};
-        if(global.ailtire.config.authEnabled) {
-            _loadCliTokenEnv(env);
-            await protocols.authenticate(env);
+        _loadCliTokenEnv(env);
+        await protocols.authenticate(env);
 
-            // 3) run your framework’s authenticate() to populate env.user/env.actor
-            if (actionObj.path !== '/ailtire/auth/me') {
-                authorize(actionObj, env);
-            }
+        // 3) run your framework’s authenticate() to populate env.user/env.actor
+        if(actionObj.path !== '/ailtire/auth/me') {
+            authorize(actionObj, env);
         }
     }
     if(actionObj.path === '/ailtire/ai/chat') {

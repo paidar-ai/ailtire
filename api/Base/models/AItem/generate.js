@@ -47,6 +47,7 @@ module.exports = {
                 }
                 obj.objectID = action.name;
                 let retval = await action.save();
+                console.log(retval);
                 break;
         }
         obj.note.save();

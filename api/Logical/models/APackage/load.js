@@ -24,15 +24,9 @@ let reservedDirs = {
     },
     deploy: (package, prefix, dir) => {
     //    package = ADeployment.load(package, prefix, dir);
-    },
-    handlers: (package, prefix, dir) => {
+    }, handlers: (package, prefix, dir) => {
         // The Interface directory can be multiple directories deep which map to routes A/B/C
-        if(AHandlers) {
-            let handlers = AHandlers.loadAll({package: package});
-            if(handlers) {
-                package.handlers = handlers;
-            }
-        }
+        // package.handlers = AHandler.loadAll(package, prefix, dir);
     },
     interface: (package, prefix, dir) => {
         //The Interface directory can be multiple directories deep which map to routes A/B/C
@@ -80,6 +74,11 @@ module.exports = {
     fn: function (inputs, env) {
         // Get the package definition from the index.js file.
         const dir = inputs.dir;
+        if(!fs.existsSync(dir + '/index.js')) {
+            console.error("Missing index.js, Not processing:", dir);
+            return;
+        }
+        
         const pkgDetails = require(dir + '/index.js');
         let prefix = inputs.prefix || "";
 
@@ -91,7 +90,7 @@ module.exports = {
         let package = new APackage(pkgDetails);
         for (let i in dirs) {
             let file = path.basename(dirs[i]);
-            if (file[0] !== '.') {
+            if (file[0] !== '.' && file !== 'security') {
                 if (!reservedDirs.hasOwnProperty(file)) {
                     let subpackage = APackage.load({dir: path.join(dir, file), prefix: prefix});
                     package.addToSubPackages(subpackage);

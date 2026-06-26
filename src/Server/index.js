@@ -10,14 +10,19 @@ const bodyParser = require("body-parser");
 const upload = multer({dest: '.uploads/'});
 const ASocketIOAdaptor = require('../Comms/ASocketIOAdaptor');
 
+const BootStrap = require('../../src/BootStrap');
+
 const {McpServer} = require('@modelcontextprotocol/sdk/server/mcp.js');
 const {StreamableHTTPServerTransport} = require("@modelcontextprotocol/sdk/server/streamableHttp.js");
 
 global.upload = upload;
+global.ailtire = global.ailtire || {};
+_instances = global._instances || {};
 
 const htmlGenerator = require('../Documentation/html');
 const Renderer = require('../Documentation/Renderer');
-
+let ailtireBaseDir = path.resolve(__dirname, '../..');
+ailtire = global.ailtire || { config: { baseDir: ailtireBaseDir }};
 
 // Here we are configuring express to use body-parser as middle-ware.
 
@@ -26,9 +31,25 @@ const Renderer = require('../Documentation/Renderer');
 module.exports = {
     listen: async (config) => {
 
+    // This loads everything.
+        global.ailtire.config = config;
+        global.ailtire.baseDir = config.baseDir || ailtireBaseDir;
+        
+        BootStrap.init(ailtireBaseDir);
+        ARole.loadAll();
+        AActor.loadAll({dir: path.resolve(ailtireBaseDir, "actors")});
+        console.log(global.ailtire.baseDir);
+        console.log(ailtireBaseDir);
+        _loadRuntimeTarget(config);
+
         server.use(function(req, res, next) {
             res.header("Access-Control-Allow-Origin", "*");
-            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+            res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+            res.header("Access-Control-Allow-Private-Network", "true");
+            if (req.method === 'OPTIONS') {
+                return res.status(200).end();
+            }
             next();
         });
 
@@ -47,6 +68,7 @@ module.exports = {
         });
 
         normalizeConfig(config);
+        global.ailtire = global.ailtire || {};  
         global.ailtire.config = config;
 
         // Action.defaults(server);
@@ -58,6 +80,7 @@ module.exports = {
         Action.load(server, "/api/", config);
         // Action.mapRoutes(server, config);
 
+        standardFileTypes(config, server);
         _setupAdaptors(config);
         _setupDefaultServices(config);
 
@@ -98,6 +121,143 @@ module.exports = {
     },
 }
 
+function _loadRuntimeTarget(config) {
+    let target = _normalizeRuntimeTarget(config);
+
+    if(target.type === 'microservice') {
+        _loadMicroserviceTarget(config, target);
+        return;
+    }
+
+    _loadApplicationTarget(config);
+}
+
+function _loadApplicationTarget(config) {
+// If the working directory is the same as the ailtire then do not load the application.
+    if(ailtireBaseDir !== global.ailtire.baseDir) {
+        AApplication.load({dir: config.baseDir});
+        ailtire.baseDir = ailtireBaseDir;
+    } else {
+        AApplication.load({dir: global.ailtire.baseDir});
+        console.log("Skipping loading");
+    }
+}
+
+function _loadMicroserviceTarget(config, target) {
+    let manifest = _resolveMicroserviceManifest(config, target);
+    let packageEntries = _normalizeMicroservicePackages(manifest);
+
+    if(packageEntries.length === 0) {
+        throw new Error('Microservice target requires at least one package entry.');
+    }
+
+    let rootPackage = _createMicroserviceRoot(config, manifest);
+    let loadedPackages = {};
+    for(let i in packageEntries) {
+        let entry = packageEntries[i];
+        let packageDir = _resolvePackageDir(config.baseDir, entry.path || entry.dir || entry);
+        let prefix = entry.prefix || manifest.prefix;
+        let pkg = APackage.load({dir: packageDir, prefix: prefix});
+        let packageKey = pkg.name.replace(/\s/g, '');
+        loadedPackages[packageKey] = pkg;
+        rootPackage.subpackages[packageKey] = pkg;
+    }
+
+    let actors = AActor.loadAll({dir: path.resolve(config.baseDir, 'actors')}) || {};
+    let notes = ANote.loadAll({dir: path.resolve(config.baseDir, '.notes')}) || {};
+
+    global.topPackage = rootPackage;
+    global.application = {
+        name: manifest.name || config.name || rootPackage.name,
+        type: 'microservice',
+        dir: path.resolve(config.baseDir),
+        package: rootPackage,
+        packages: loadedPackages,
+        actors: actors,
+        notes: notes,
+        manifest: manifest,
+    };
+}
+
+function _normalizeRuntimeTarget(config) {
+    if(!config.target) {
+        return {type: 'application'};
+    }
+    if(typeof config.target === 'string') {
+        return {type: config.target.toLowerCase()};
+    }
+    return {
+        ...config.target,
+        type: (config.target.type || 'application').toLowerCase(),
+    };
+}
+
+function _resolveMicroserviceManifest(config, target) {
+    if(target.manifest && typeof target.manifest === 'object') {
+        return target.manifest;
+    }
+    if(config.microservice && typeof config.microservice === 'object' && !Array.isArray(config.microservice)) {
+        return config.microservice;
+    }
+
+    let manifestPath = target.manifest || config.microservice;
+    if(manifestPath) {
+        let resolvedPath = path.resolve(config.baseDir, manifestPath);
+        return require(resolvedPath);
+    }
+
+    return {
+        name: config.name,
+        shortname: config.name,
+        packages: config.packages || config.packageDirs || [],
+    };
+}
+
+function _normalizeMicroservicePackages(manifest) {
+    let packages = manifest.packages || manifest.packageDirs || manifest.modules || [];
+    if(!Array.isArray(packages)) {
+        return [packages];
+    }
+    return packages;
+}
+
+function _resolvePackageDir(baseDir, packageRef) {
+    let resolvedDir = path.resolve(baseDir, packageRef);
+    if(fs.existsSync(path.resolve(resolvedDir, 'index.js'))) {
+        return resolvedDir;
+    }
+    let apiDir = path.resolve(resolvedDir, 'api');
+    if(fs.existsSync(path.resolve(apiDir, 'index.js'))) {
+        return apiDir;
+    }
+    throw new Error(`Could not resolve microservice package directory: ${packageRef}`);
+}
+
+function _createMicroserviceRoot(config, manifest) {
+    let serviceName = manifest.name || config.name || 'microservice';
+    let shortname = (manifest.shortname || serviceName).replace(/\s/g, '');
+    let rootPackage = new APackage({
+        name: serviceName,
+        shortname: shortname,
+        description: manifest.description || `Microservice ${serviceName}`,
+        prefix: manifest.prefix || `/${shortname.toLowerCase()}`,
+        dir: path.resolve(config.baseDir),
+        depends: [],
+    });
+
+    rootPackage.classes = {};
+    rootPackage.handlers = {};
+    rootPackage.interface = {};
+    rootPackage.usecases = {};
+    rootPackage.workflows = {};
+    rootPackage.subpackages = {};
+    rootPackage.events = {};
+    rootPackage.deploy = manifest.deploy || {};
+    rootPackage.doc = manifest.doc || {basedir: path.resolve(config.baseDir, 'doc'), files: []};
+
+    return rootPackage;
+}
+
 function mainPage(config) {
     let layout = config.layout || 'default';
     return Renderer.render(layout, './index', {
@@ -132,6 +292,19 @@ function findStaticFile(config, apath) {
         let checkPath = path.resolve(`${paths[i]}/${apath}`);
         if(fs.existsSync(checkPath)) {
             return checkPath    
+        }
+    }
+    // Check in model views
+    if (apath.startsWith('/views/')) {
+        let parts = apath.split('/');
+        let className = parts[2];
+        if (global.classes && global.classes[className]) {
+            let modelDir = global.classes[className].definition.dir;
+            let subPath = parts.slice(3).join('/');
+            let checkPath = path.resolve(`${modelDir}/views/${subPath}`);
+            if (fs.existsSync(checkPath)) {
+                return checkPath;
+            }
         }
     }
 }

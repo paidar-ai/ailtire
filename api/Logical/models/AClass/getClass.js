@@ -24,11 +24,6 @@ module.exports = {
     fn: function (inputs, env) {
         // inputs contains the obj for the this method.
         let { name } = inputs;
-        if(!name) {
-            console.warn("No name provided for class");
-            return null;
-        }
-
         // obj has the obj for the method.
         if (global.classes.hasOwnProperty(name)) {
             return global.classes[name];

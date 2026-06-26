@@ -8,45 +8,36 @@ class AHint {
                 description: 'Unique hint identifier (GUID or composite key).',
                 required: true
             },
-            prompt: {
+            key: {
                 type: 'string',
-                description: 'Human-readable instruction for this hint.',
+                description: 'Machine-friendly alias (e.g. "admin.promptRoleName").',
                 required: true
             },
-            intent: {
+            type: {
                 type: 'string',
-                description: 'Short, declarative intent label for workflow generation.',
-                required: false
+                description: 'Kind of hint: "open" | "slot" | "choice" | "confirm" | "feedback".',
+                required: true
             },
-            requiresCapabilities: {
-                type: 'array',
-                description: 'Capabilities needed to fulfill this hint (late-bound to toolbox tools).',
-                required: false
-            },
-            stage: {
+            template: {
                 type: 'string',
-                description: 'Stage in the guidance workflow (outline, whitepaper, lecture, slides, blog).',
-                required: false
+                description: 'Text template, with placeholders (e.g. "Enter the {field}").',
+                required: true
             },
-            produces: {
+            params: {
                 type: 'json',
-                description: 'Outputs produced by this hint (type, format, count).',
+                description: 'Parameters for placeholders (e.g. { field: "roleName", options: [...] }).',
                 required: false
             },
-            dependsOn: {
-                type: 'array',
-                description: 'List of hint ids or stage names this hint depends on.',
-                required: false
-            },
-            humanGate: {
-                type: 'boolean',
-                description: 'True if this hint requires human approval before proceeding.',
-                required: false
-            },
-            metadata: {
+            when: {
                 type: 'json',
-                description: 'Extension point for hint-specific metadata.',
+                description: 'Applicability filter (JSON-DSL or expression tree) evaluated against runtime context.',
                 required: false
+            },
+            score: {
+                type: 'number',
+                description: '0..1 ranking for competing hints (higher = stronger match).',
+                required: false,
+                default: 0.5
             },
             createdAt: {
                 type: 'string',

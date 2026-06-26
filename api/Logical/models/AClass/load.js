@@ -1,3 +1,6 @@
+const path = require("node:path");
+const fs = require("fs");
+
 module.exports = {
     friendlyName: 'load',
     description: 'Load a AClass from the models directory',
@@ -25,11 +28,24 @@ module.exports = {
         const classProxy = require("../../../../src/Proxy/ClassProxy");
         let dir = inputs.dir;
         let package = inputs.package;
-        let myClass = require(dir + '/index.js');
+        let indexFile = path.resolve(dir, 'index.js');
+        if(!fs.existsSync(indexFile)) {
+            console.log("Skipping Class: " + dir);
+            console.log("index.js file is missing!");
+            return;
+        }
+        let myClass = require(indexFile);
 
         myClass.package = package;
         myClass.dir = dir;
-        myClass.uid = `${package.uid}.${myClass.definition.name}`;
+        if(myClass.definition?.name) {
+            myClass.uid = `${package.name}.${myClass.definition.name}`;
+        } else {
+            console.error("Class name is missing!");
+            myClass = require(path.resolve(dir,'index.js'));
+            
+            return;
+        }
 
         if(!global.hasOwnProperty("classes")) {
             global.classes = {};

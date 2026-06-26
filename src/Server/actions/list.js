@@ -20,6 +20,42 @@ module.exports = {
         if (global._instances) {
             objs = AClass.getInstances(modelName);
         }
+
+        // Filtering based on inputs
+        if (inputs && Object.keys(inputs).length > 0) {
+            let filteredObjs = {};
+            for (let id in objs) {
+                let obj = objs[id];
+                let match = true;
+                for (let key in inputs) {
+                    if (key === 'id') continue;
+                    let val = inputs[key];
+                    // Support basic filtering on attributes and associations
+                    let objVal = obj[key];
+                    if (Array.isArray(objVal)) {
+                        // Check if val is in the array (membership check)
+                        if (!objVal.some(item => (item.id || item) == val)) {
+                            match = false;
+                            break;
+                        }
+                    } else if (objVal && typeof objVal === 'object') {
+                        if ((objVal.id || objVal.name) != val) {
+                            match = false;
+                            break;
+                        }
+                    } else {
+                        if (objVal != val) {
+                            match = false;
+                            break;
+                        }
+                    }
+                }
+                if (match) {
+                    filteredObjs[id] = obj;
+                }
+            }
+            objs = filteredObjs;
+        }
         /*
         let hostURL = global.ailtire.config.host;
         if(global.ailtire.config.listenPort) {

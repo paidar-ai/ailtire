@@ -18,7 +18,7 @@ module.exports = {
 
     fn: function (inputs, env) {
 
-        let dir = inputs.dir || global.ailtire.config.baseDir;
+        let dir = inputs.dir || global.ailtire.baseDir;
         let actors = helper.getDirectories(dir);
         // Initialize the global actors.
         if (!global.hasOwnProperty('actors')) {

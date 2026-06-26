@@ -68,4 +68,3 @@ export async function fetchActors() {
         console.error("Error fetching actors: ", err);
     }
 }
-

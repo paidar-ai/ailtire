@@ -3,30 +3,12 @@ class AInsight {
         name: 'AInsight',
         description: 'Adaptive, feedback-weighted learning for a User-as-Actor “over time”.',
         attributes: {
-            // --- Deterministic matching / identity ---
-            scopeKey: { type: 'string', description: 'Scope for deterministic upsert (e.g., project:<id>, user:<id>).' },
-            insightType: { type: 'string', description: 'preference | constraint | decision | project_state | glossary | todo | risk.' },
-            subjectKey: { type: 'string', description: 'Dot-path canonical subject key (e.g., auth.token_storage, db.engine).' },
-            valueKey: { type: 'string', description: 'Optional dot-path canonical value key (e.g., auth.storage.http_only_cookie).' },
-
-            // --- Injection payload ---
-            statement: { type: 'string', description: 'Concise, inject-able statement representing the current truth.' },
-            rationale: { type: 'string', description: 'Optional short rationale (1–2 lines max).' },
-            priority: { type: 'number', description: '1..5 injection importance (5 = almost always include).' },
-
-            // --- Lifecycle / state ---
-            status: { type: 'string', description: 'active | superseded | resolved | expired.' },
-            createdAt: { type: 'string', description: 'ISO-8601 timestamp of creation.' },
-            updatedAt: { type: 'string', description: 'ISO-8601 timestamp of last update.' },
-
-            // --- Confidence & provenance ---
+            id: { type: 'string', description: 'AInsight identifier.' },
+            key: { type: 'string', description: 'Dimension of learning (e.g., export.format=xlsx).' },
+            value: { type: 'json', description: 'Optional payload for the key (default params, etc.).' },
             confidence: { type: 'number', description: '0..1 confidence that this insight currently holds.' },
-            sources: { type: 'json', description: 'Array of provenance entries: [{ momentId, ts }].' },
-            lastEvidence: { type: 'json', description: 'Last evidence excerpt: { source: user|assistant, quote }.' },
-            tags: { type: 'json', description: 'Optional string tags for retrieval/ranking.' },
-
-            // --- Backward compatibility ---
-            lastUpdated: { type: 'string', description: 'ISO-8601 timestamp of last update (legacy).' }
+            status: { type: 'string', description: 'Proposed | Active | Contested | Dormant | Retired.' },
+            lastUpdated: { type: 'string', description: 'ISO-8601 timestamp of last update.' }
         },
         associations: {
             user: { type: 'AIdentity', description: 'Owner user.', cardinality: 1, composition: false, owner: false, via: 'insights' },
@@ -34,12 +16,6 @@ class AInsight {
         },
         // State machine implements unlearning/decay and counter-signal handling
         statenet: {
-            Init: {
-                description: 'Initial state.',
-                events: {
-                    create: { Proposed: {} }
-                }
-            },
             Proposed: {
                 description: 'New or weakly evidenced insight.',
                 events: {

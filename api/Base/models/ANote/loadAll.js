@@ -30,6 +30,7 @@ module.exports = {
         // inputs contains the obj for the this method.
         let {dir} = inputs;
         // obj has the obj for the method.
+        fs.mkdirSync(dir, {recursive: true});
         let files = fs.readdirSync(dir);
         let notes = [];
         for(let i in files) {
