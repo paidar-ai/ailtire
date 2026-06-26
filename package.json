@@ -3,7 +3,7 @@
     "publishConfig": {
         "registry": "https://npm.pkg.github.com"
     },
-    "version": "0.31.0",
+    "version": "0.40.0",
     "description": "UML Architecture by coding and simulating system architectures.",
     "main": "index.js",
     "scripts": {
