@@ -1,6 +1,9 @@
 {
-    "name": "ailtire",
-    "version": "0.30.0",
+    "name": "@paidar-ai/ailtire",
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
+    },
+    "version": "0.31.0",
     "description": "UML Architecture by coding and simulating system architectures.",
     "main": "index.js",
     "scripts": {
@@ -17,6 +20,14 @@
     "keywords": [],
     "bin": "bin/ailtire",
     "author": "Darren W Pulsipher - darren@pulsipher.org",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/paidar-ai/ailtire.git"
+    },
+    "bugs": {
+        "url": "https://github.com/paidar-ai/ailtire/issues"
+    },
+    "homepage": "https://github.com/paidar-ai/ailtire#readme",
     "license": "ISC",
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.17.2",
