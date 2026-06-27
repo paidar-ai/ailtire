@@ -1,11 +1,7 @@
-const axios = require('axios');
-const YAML = require('yamljs');
 const path = require('path');
-const Action = require('../Server/Action');
 const fs = require('fs');
 const os = require('os');
 const homeDir = os.homedir();
-const protocols = require('../security/protocols/index.js');
 const CLI_CONFIG_DIR = `${homeDir}/.ailtire`;
 const CLI_CRED_FILE   = `${CLI_CONFIG_DIR}/credentials.json`;
 
@@ -34,6 +30,38 @@ const AIHelper = require("../Server/AIHelper");
 
 let baseDir = __dirname;
 let _commands = {};
+let Action;
+let axios;
+let YAML;
+let protocols;
+
+const _getAction = () => {
+    if (!Action) {
+        Action = require('../Server/Action');
+    }
+    return Action;
+};
+
+const _getAxios = () => {
+    if (!axios) {
+        axios = require('axios');
+    }
+    return axios;
+};
+
+const _getYAML = () => {
+    if (!YAML) {
+        YAML = require('yamljs');
+    }
+    return YAML;
+};
+
+const _getProtocols = () => {
+    if (!protocols) {
+        protocols = require('../security/protocols/index.js');
+    }
+    return protocols;
+};
 
 module.exports = {
     execute: async (binDir) => {
@@ -225,7 +253,7 @@ const _executeAction = async (actionObj, args) => {
     if(actionObj.path !== '/ailtire/auth/login' && actionObj.path !== '/ailtire/auth/register') {
         const env = {};
         _loadCliTokenEnv(env);
-        await protocols.authenticate(env);
+        await _getProtocols().authenticate(env);
 
         // 3) run your framework’s authenticate() to populate env.user/env.actor
         if(actionObj.path !== '/ailtire/auth/me') {
@@ -246,7 +274,7 @@ const _executeAction = async (actionObj, args) => {
             if (actionObj.inputs && actionObj.inputs[ikey]) {
                 let typeAllCAPS = actionObj.inputs[ikey].type.toUpperCase();
                 if (typeAllCAPS === 'YAML') {
-                    data[ikey] = YAML.load(params[ikey]);
+                    data[ikey] = _getYAML().load(params[ikey]);
                 } else if (typeAllCAPS === 'FILE') {
                     data[ikey] = fs.readFileSync(params[ikey]);
                 } else {
@@ -274,7 +302,7 @@ const _executeAction = async (actionObj, args) => {
         console.error("Command Failed!");
         process.exit(-1);
     } else {
-        Action.execute(actionObj, params)
+        _getAction().execute(actionObj, params)
             .then(async (retval) => {
                 console.log(retval);
 
@@ -397,7 +425,7 @@ const _postAction = (action, args) => {
         if (action.inputs && action.inputs[aname]) {
             let typeAllCAPS = action.inputs[aname].type.toUpperCase();
             if (typeAllCAPS === 'YAML') {
-                data[aname] = YAML.load(params[aname]);
+                data[aname] = _getYAML().load(params[aname]);
             } else if (typeAllCAPS === 'FILE') {
                 data[aname] = fs.readFileSync(params[aname]);
             } else {
@@ -422,7 +450,7 @@ const _postAction = (action, args) => {
         console.error(errorString);
         console.error("Command Failed!");
     } else {
-        axios.post(url, data)
+        _getAxios().post(url, data)
             .then(response => {
                 console.log("Connected");
                 console.log(response.data);
@@ -445,7 +473,7 @@ const _helpVersion = () => {
 }
 
 const _runBuiltInAppCreate = async (args) => {
-    const action = require(path.resolve(__dirname, '../../api/interface/app/create.js'));
+    const action = require(path.resolve(__dirname, '../../api/Logical/models/AApplication/construct.js'));
     const params = _getParameters(args);
     if (params.hasOwnProperty('help')) {
         _helpCommand(action);

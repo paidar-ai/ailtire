@@ -54,6 +54,7 @@ module.exports = {
                 'deploy/doc/package.json': {template: `${__dirname}/templates/deploy/package.doc.json`},
                 '/deploy/web/server.js': {template: `${__dirname}/templates/deploy/server.js`},
                 '/deploy/doc/doc.js': {template: `${__dirname}/templates/deploy/doc.js`},
+                '.ailtire.json': {template: `${__dirname}/templates/ailtire.json`},
                 'docs/plantuml.jar': {copy: `${__dirname}/templates/plantuml.jar`}
             }
         };
