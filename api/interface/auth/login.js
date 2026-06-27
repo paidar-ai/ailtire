@@ -73,15 +73,19 @@ module.exports = {
     }
 
     // 3. Update lastLogin timestamp
-      await AIdentity.loggedIn({ id: identity.id });
+      await AIdentity.loggedIn({ id: identity.identifier || identity.id });
 
     // 4. Issue tokens
-      const accessSecret  = process.env.JWT_ACCESS_SECRET;
-      const refreshSecret = process.env.JWT_REFRESH_SECRET;
+      const accessSecret  = process.env.JWT_ACCESS_SECRET || 'changeme';
+      const refreshSecret = process.env.JWT_REFRESH_SECRET || 'changeme';
       const accessExp     = process.env.JWT_ACCESS_EXPIRES_IN  || '15m';
       const refreshExp    = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
-    const payload = { userId: identity.id, kind: identity.kind };
+    const payload = {
+      userId: identity.id,
+      identifier: identity.identifier,
+      kind: identity.kind
+    };
     const accessToken = jwt.sign(
       payload,
       accessSecret,

@@ -14,6 +14,26 @@ global.ailtire = {
 let ailtireBaseDir = path.resolve(__dirname, '..');
 const appRoot = path.resolve(global.ailtire.baseDir, '.ailtire.json');
 global.ailtire.hasApp = fs.existsSync(appRoot);
+if (global.ailtire.hasApp) {
+    let appConfig = {
+        baseDir: global.ailtire.baseDir,
+        host: 'localhost',
+        listenPort: 3000,
+        urlPrefix: '/web',
+    };
+    const appPackage = path.resolve(global.ailtire.baseDir, 'package.json');
+    if (fs.existsSync(appPackage)) {
+        try {
+            const pkg = JSON.parse(fs.readFileSync(appPackage, 'utf8'));
+            appConfig.prefix = pkg.name ? pkg.name.replace(/\s/g, '') : path.basename(global.ailtire.baseDir);
+        } catch (e) {
+            appConfig.prefix = path.basename(global.ailtire.baseDir);
+        }
+    } else {
+        appConfig.prefix = path.basename(global.ailtire.baseDir);
+    }
+    global.ailtire.config = appConfig;
+}
 
 if (global.ailtire.hasApp) {
     const BootStrap = require('../src/BootStrap');

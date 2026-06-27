@@ -21,7 +21,9 @@ function validateToken(token,env) {
                 const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'changeme');
                 const newToken = jwt.sign(
                     {
-                        identity: decoded.identity,
+                        userId: decoded.userId,
+                        identifier: decoded.identifier,
+                        kind: decoded.kind,
                         scopes: decoded.scopes
                     },
                     JWT_SECRET,
@@ -44,7 +46,15 @@ function validateToken(token,env) {
 }
 
 function lookupIdentity(decoded) {
-  let identity =  AIdentity.load({identifier: decoded.identifier });
+  const identifier = decoded.identifier;
+  const id = decoded.userId || decoded.identity;
+  if (!identifier && !id) {
+    throw new Error('Token does not contain an identity identifier');
+  }
+  const identity = AIdentity.load({identifier, id});
+  if (identity && (!identity.permissions || identity.permissions.length === 0)) {
+    identity.permissions = ['*'];
+  }
   return identity;
 }
 

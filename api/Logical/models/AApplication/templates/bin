@@ -2,4 +2,4 @@
 
 const program = require('ailtire/src/Command/subcommander');
 
-program.executive(__dirname);
+program.execute(__dirname);

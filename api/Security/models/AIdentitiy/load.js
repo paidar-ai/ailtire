@@ -32,9 +32,19 @@ module.exports = {
 
     fn: function (inputs, env) {
         // inputs contains the obj for the this method.
-        const {identifier} = inputs;
+        const {identifier, id} = inputs;
         const dir = path.resolve(global.ailtire.config?.baseDir || global.ailtire.baseDir, ".database", "AIdentity");
-        const filename = path.resolve(dir, `${identifier}.json`);
+        let filename = path.resolve(dir, `${identifier}.json`);
+        if (!fs.existsSync(filename) && id) {
+            const matches = fs.readdirSync(dir).filter((file) => file.endsWith('.json'));
+            for (const file of matches) {
+                const candidate = JSON.parse(fs.readFileSync(path.resolve(dir, file), "utf8"));
+                if (candidate.id === id) {
+                    filename = path.resolve(dir, file);
+                    break;
+                }
+            }
+        }
         const json = fs.readFileSync(filename, "utf8");
         const def = JSON.parse(json);
         const retval = new AIdentity(def);
@@ -45,21 +55,26 @@ module.exports = {
             }
             // Load the actors and their roles to create a calculatedPermissions.
             let calcPermissions = {};
-            for (let i in retval.actorNames) {
-                let actorName = retval.actorNames[i];
-                let actor = AActor.find(actorName);
-                let roles = actor.roles;
-                for (let j in roles) {
-                    let permissions = roles[j].permissions;
-                    for (let k in permissions) {
-                        calcPermissions[permissions[k]] = true;
+            if (typeof AActor !== 'undefined' && AActor && typeof AActor.find === 'function') {
+                for (let i in retval.actorNames) {
+                    let actorName = retval.actorNames[i];
+                    let actor = AActor.find(actorName);
+                    if (!actor || !actor.roles) {
+                        continue;
+                    }
+                    let roles = actor.roles;
+                    for (let j in roles) {
+                        let permissions = roles[j].permissions;
+                        for (let k in permissions) {
+                            calcPermissions[permissions[k]] = true;
+                        }
                     }
                 }
             }
             let permissions = Object.keys(calcPermissions);
-            retval.permissions = permissions;
+            retval.permissions = permissions.length > 0 ? permissions : (retval.permissions || []);
         } else {
-            retval.permissions = "";
+            retval.permissions = retval.permissions || [];
         }
 
         return retval;

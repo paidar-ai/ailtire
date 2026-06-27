@@ -17,7 +17,8 @@ installing, uninstalling and check the status of the application.
 ailtire app <command> [args]
 
 ailtire app buildEngine --env <environment name> --name <name of the buildEngine>
-ailtire app create --name <app name> --path <file path>
+ailtire app create --name <app name> --dir <file path>
+ailtire app create --name <app name> --bootstrap-dev --identifier <id> --secret <secret>
 ailtire app docs
 ailtire app install --env <environment name> --name <name of the installation>
 ailtire app status --env <environment name> --name <name of the installation>

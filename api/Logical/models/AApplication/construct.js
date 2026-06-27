@@ -20,7 +20,7 @@ module.exports = {
         json: (obj) => { return obj; },
     },
 
-    fn: function (inputs, env) {
+    fn: async function (inputs, env) {
         let dir = inputs.dir;
         let name = inputs.name;
         let files = {
@@ -43,7 +43,7 @@ module.exports = {
                 '.workflows': { folder: true },
                 '.notes': { folder: true },
                 '.uploads': { folder: true },
-                'views/layouts/default.ejs': {copy: `${__dirname}/templates/package.json`},
+                'views/layouts/default.ejs': {copy: `${__dirname}/templates/default.ejs`},
                 'bin/:nameNoSpace:': {copy: `${__dirname}/templates/bin`},
                 'assets/js': {folder: true},
                 'deploy/docker-compose.yml': {template: `${__dirname}/templates/deploy/docker-compose.yml`},
@@ -58,7 +58,7 @@ module.exports = {
                 'docs/plantuml.jar': {copy: `${__dirname}/templates/plantuml.jar`}
             }
         };
-        Generator.process(files, dir);
+        await Generator.processAsync(files, dir);
         return name;
     }
 };

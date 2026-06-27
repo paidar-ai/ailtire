@@ -211,7 +211,9 @@ const _searchAction = (commands, args, topDir) => {
 };
 
 const _helpCommand = (actionObj) => {
-    let fullName = actionObj.path.replaceAll(/\//g, ' ');
+    let fullName = actionObj.path
+        ? actionObj.path.replaceAll(/\//g, ' ')
+        : (actionObj.friendlyName || actionObj.name || 'command');
     let errorString = `Usage: ${fullName}\n`;
     errorString += `\t${actionObj.description}\n`;
     for (let iname in actionObj.inputs) {
@@ -473,7 +475,7 @@ const _helpVersion = () => {
 }
 
 const _runBuiltInAppCreate = async (args) => {
-    const action = require(path.resolve(__dirname, '../../api/Logical/models/AApplication/construct.js'));
+    const action = require(path.resolve(__dirname, '../../api/interface/app/create.js'));
     const params = _getParameters(args);
     if (params.hasOwnProperty('help')) {
         _helpCommand(action);

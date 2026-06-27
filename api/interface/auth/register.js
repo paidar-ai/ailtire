@@ -58,11 +58,11 @@ module.exports = {
     identity.permissions = inputs.permissions || [];
 
     // 4) Issue JWT access & refresh tokens
-    const { accessToken, refreshToken } = issueTokens({
-      id: identity.id,
-      identifier,
-      kind
-    });
+  const { accessToken, refreshToken } = issueTokens({
+    id: identity.id,
+    identifier,
+    kind
+  });
 
     // 5) Strip secretHash before returning
     // delete identity.secretHash;
@@ -83,8 +83,8 @@ module.exports = {
  */
 function issueTokens(payload) {
   // Read secrets & expiry settings from env (provide defaults if you like)
-  const accessSecret  = process.env.JWT_ACCESS_SECRET;
-  const refreshSecret = process.env.JWT_REFRESH_SECRET;
+  const accessSecret  = process.env.JWT_ACCESS_SECRET || 'changeme';
+  const refreshSecret = process.env.JWT_REFRESH_SECRET || 'changeme';
   const accessExp     = process.env.JWT_ACCESS_EXPIRES_IN  || '15m';
   const refreshExp    = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 

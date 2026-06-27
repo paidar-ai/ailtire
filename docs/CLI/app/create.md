@@ -15,17 +15,23 @@ Create an application in the ailtire framework.
 
 ```shell
 # Create a ailtire application  in the specified directory.
-ailtire actor create --name <actor name>  --path <Directory path>
+ailtire app create --name <app name> --dir <Directory path>
 
 # Created a ailtire application in the current directory.
-ailtire actor create --name <actor name>  
+ailtire app create --name <app name>
+
+# Create and bootstrap a developer identity.
+ailtire app create --name <app name> --bootstrap-dev --identifier <id> --secret <secret>
 ```
 
 ## Description
 
-The command creates an application directory structure for the application created. If the --path parameter is included
+The command creates an application directory structure for the application created. If the --dir parameter is included
 the path is used as the base directory for the application. If it is not included then the current directory will be
 used as the location where a new directory will be created with the name of the application.
+
+If `--bootstrap-dev` is provided, or you confirm the prompt in an interactive terminal, the CLI will register a
+developer identity and log it in so follow-up commands can run immediately.
 
 For more information about the directory structure see the [Directory Page](directory).
 
@@ -55,7 +61,7 @@ application.
 The api directory contains an index.js file that defines the application.
 
 ```javascript
-// <actor name>/index.js
+// <app name>/index.js
 
 module.exports = {
     name: 'Application Developer',
