@@ -1,6 +1,8 @@
 const Generator = require("../../../../src/Documentation/Generator");
 const fs = require("fs");
 const path = require("path");
+const AClass = require("../../../../src/Server/AClass");
+const APackage = require("../../../../src/Server/APackage");
 module.exports = {
     friendlyName: 'construct',
     description: `Construct a AClass in the models directory of the package`,
@@ -56,6 +58,11 @@ module.exports = {
         let cls = AClass.load({dir: path.resolve(output, "models", nameNoSpace), package: package});
         cls.definition.description = inputs.description;
         AClass.save(cls);
+        try {
+            cls.generateView({id: cls.definition.name, type: 'svelte'});
+        } catch (e) {
+            console.error('Unable to generate default views for class:', cls.definition.name, e);
+        }
         return cls;
     }
 };

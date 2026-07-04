@@ -92,6 +92,8 @@ already exist in nodejs and created a directory hierarchy that sits in the proje
 to put the design of the architecture as well as the CLI (Command Line interface) of the system being architected. This
 is important because most of the architectures I am working have a Web, REST and CLI .
 
+See the [Persistence](persistence) page for repo-backed object and blob storage configuration.
+
 ### Command Line Interface 
 
 For each application a script is created in the bin directory with the name of the application.

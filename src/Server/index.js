@@ -81,7 +81,7 @@ module.exports = {
         // Action.mapRoutes(server, config);
 
         standardFileTypes(config, server);
-        _setupAdaptors(config);
+        await _setupAdaptors(config);
         _setupDefaultServices(config);
 
         try {
@@ -402,7 +402,7 @@ function _setupDefaultServices(config) {
     
     // AStack.load('ailtire', 'local', design);
 }
-function _setupAdaptors(config) {
+async function _setupAdaptors(config) {
     global.ailtire.comms = { services: []};
 
     // Default should always be there. This is the websocket socket.io that communicates with the webinterface.
@@ -429,6 +429,8 @@ function _setupAdaptors(config) {
     }
     if(config.persist) {
         let pAdaptor = config.persist.adaptor;
-        pAdaptor.loadAll();
+        if (pAdaptor && typeof pAdaptor.loadAll === 'function') {
+            await Promise.resolve(pAdaptor.loadAll());
+        }
     }
 }

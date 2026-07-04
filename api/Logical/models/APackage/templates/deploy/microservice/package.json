@@ -1,0 +1,20 @@
+{
+  "name": "<%= ancestors %>_<%= shortname %>_microservice",
+  "version": "0.0.1",
+  "description": "<%= name %> microservice.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ailtire": "latest",
+    "aws-sdk": "^2.1300.0",
+    "commander": "^4.1.0",
+    "ejs": "^3.0.1",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {}
+}

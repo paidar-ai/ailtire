@@ -164,17 +164,16 @@ module.exports = {
                     return retval;
                 }
             } else {
-                /*
-                return function (...args) {
-                    let adaptor = global.ailtire.config.persist?.adaptor;
-                    if (adaptor) {
-                        adaptor.load(obj, args[0]);
-                        return obj;
-                    } else {
-                        return obj;
+                return async function (...args) {
+                    const adaptor = global.ailtire?.config?.persist?.adaptor;
+                    if (adaptor && typeof adaptor.loadClass === 'function') {
+                        return await adaptor.loadClass(obj, args[0]);
                     }
+                    if (adaptor && typeof adaptor.load === 'function') {
+                        return await adaptor.load(obj, args[0]);
+                    }
+                    return obj;
                 }
-                 */
             }
         } else if (prop === 'instances') {
             return async function (...args) {

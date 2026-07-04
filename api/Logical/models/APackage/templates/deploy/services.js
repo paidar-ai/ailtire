@@ -1,13 +1,21 @@
 module.exports = {
     services: {
-        web: {
-            image: '<%= ancestors %>_<%= shortname %>_web',
+        microservice: {
+            image: '<%= ancestors %>_<%= shortname %>_microservice',
             volumes: {
                 docker: { source: "/var/run/docker.sock", target: "/var/run/docker.sock" }
             },
             interface: {
-                "/<%= shortname %>": { path: '/', port: 3000, protocol:"http"},
-                "/<%= shortname %>/socket.io": { path: '/socket.io', port: 3000, protocol:"http"},
+                "/<%= shortname %>/api": { path: '/', port: 3000, protocol:"http"},
+            },
+            policies: { },
+            environment: {
+            },
+        },
+        webserver: {
+            image: '<%= ancestors %>_<%= shortname %>_webserver',
+            interface: {
+                "/<%= shortname %>": { path: '/', port: 5173, protocol:"http"},
             },
             policies: { },
             environment: {
@@ -19,8 +27,8 @@ module.exports = {
     },
     interface: {
         ports: {
-            80: 3000,
-            443: 3000,
+            80: 5173,
+            443: 5173,
         }
     },
     data: {
