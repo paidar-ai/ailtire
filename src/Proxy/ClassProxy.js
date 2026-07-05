@@ -175,6 +175,24 @@ module.exports = {
                     return obj;
                 }
             }
+        } else if (prop === 'loadAll') {
+            if (obj.definition.methods.hasOwnProperty("loadAll")) {
+                return function (...args) {
+                    let retval = funcHandler.run(obj.definition.methods["loadAll"], this, args[0]);
+                    return retval;
+                }
+            } else {
+                return async function (...args) {
+                    const adaptor = global.ailtire?.config?.persist?.adaptor;
+                    if (adaptor && typeof adaptor.loadAll === 'function') {
+                        return await adaptor.loadAll(obj, args[0]);
+                    }
+                    if (adaptor && typeof adaptor.loadClass === 'function') {
+                        return await adaptor.loadClass(obj, args[0]);
+                    }
+                    return obj;
+                }
+            }
         } else if (prop === 'instances') {
             return async function (...args) {
                 let retval = {};
