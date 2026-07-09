@@ -401,6 +401,7 @@ class GitHubStorage {
     async loadInstanceFromData(modelClass, data, itemDir) {
         const definition = modelClass.definition;
         const instanceData = {};
+        const fileId = path.basename(itemDir || '').replace(/\s/g, '-');
 
         // 1. Load attributes
         for (let attrName in definition.attributes) {
@@ -430,6 +431,10 @@ class GitHubStorage {
                     }
                 }
             }
+        }
+
+        if (instanceData.id === undefined || instanceData.id === null || instanceData.id === '') {
+            instanceData.id = data.id || fileId;
         }
 
         // 2. Load associations
@@ -518,7 +523,16 @@ class GitHubStorage {
             }
         }
 
-        const instance = new modelClass(instanceData);
+        const modelCtor = modelClass?.prototype?.constructor || modelClass;
+        const instance = new modelCtor(instanceData);
+        if (!instance.definition) {
+            instance.definition = modelCtor.definition || modelClass.definition;
+        }
+        if (data && Object.prototype.hasOwnProperty.call(data, '_state')) {
+            instance._state = data._state;
+        } else if (instance._state === undefined || instance._state === null || instance._state === '') {
+            instance._state = 'Init';
+        }
         instance._attributes = instanceData;
         for (let key in instanceData) {
             if (instanceData[key] !== undefined && instanceData[key] !== null) {
@@ -535,6 +549,11 @@ class GitHubStorage {
         }
         this.setCompositionStorageDirs(instance, itemDir);
 
+        const modelName = instance.definition?.name || modelCtor.name || modelClass.name;
+        if(!global._instances.hasOwnProperty(modelName)) {
+            global._instances[modelName] = {};
+        }
+        global._instances[modelName][instance.id] = instance;
         return instance;
     }
 
@@ -736,7 +755,10 @@ class GitHubStorage {
         const definition = instance.definition;
         if (!definition) return instance; // Fallback for plain objects
 
-        const data = {};
+        const data = {
+            id: this.getInstanceFileName(instance),
+            _state: instance._state || 'Init'
+        };
         // 1. Attributes
         for (let attrName in definition.attributes) {
             const attr = definition.attributes[attrName];
@@ -798,12 +820,21 @@ class GitHubStorage {
     async save(instance, subDir) {
         const definition = instance.definition;
         const modelName = definition.name;
-        if (!this.modelPaths[modelName]) {
-            this.registerModel(modelName, subDir || this.getSubDir(modelName));
+        const storedDir = this.getStorageDir(instance) || instance?._persist?.directory || null;
+        let itemDir = null;
+
+        if (storedDir) {
+            itemDir = path.isAbsolute(storedDir)
+                ? storedDir
+                : path.resolve(this.clonePath, storedDir);
+        } else {
+            if (!this.modelPaths[modelName]) {
+                this.registerModel(modelName, subDir || this.getSubDir(modelName));
+            }
+            const dir = subDir || this.modelPaths[modelName] || this.getSubDir(modelName);
+            const id = this.getInstanceFileName(instance);
+            itemDir = path.resolve(this.clonePath, dir, id);
         }
-        const dir = subDir || this.modelPaths[modelName] || this.getSubDir(modelName);
-        const id = this.getInstanceFileName(instance);
-        const itemDir = path.resolve(this.clonePath, dir, id);
 
         await this.saveInstanceToDir(instance, itemDir);
         
@@ -832,10 +863,15 @@ class GitHubStorage {
 
         const customStorage = options.skipStorageHook ? null : await this.callStorageHook(instance, itemDir);
         if (customStorage !== null && customStorage !== undefined) {
+            if (customStorage && typeof customStorage === 'object' && !Array.isArray(customStorage)) {
+                customStorage.id = customStorage.id || this.getInstanceFileName(instance);
+            }
             return customStorage;
         }
 
-        const data = {};
+        const data = {
+            id: this.getInstanceFileName(instance)
+        };
 
         // 1. Attributes
         for (let attrName in definition.attributes) {

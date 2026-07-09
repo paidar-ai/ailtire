@@ -230,6 +230,10 @@ function getHandler(obj, definition, prop) {
             }
             return obj._associations[simpleProp];
         }
+    } else if (prop === 'update') {
+        return function (...args) {
+            return _update(obj, args[0]);
+        }
     }
     // give a method to return the definition of the class
     else if (prop === 'definition') {
@@ -697,6 +701,30 @@ async function _load(obj, args) {
         }
     }
     return null; // Fallback if no load method or adaptor exists
+}
+
+function _update(obj, inputs) {
+    _initalize(obj);
+
+    if (!inputs || typeof inputs !== 'object') {
+        return obj;
+    }
+
+    let changed = false;
+    const attributes = obj.definition?.attributes || {};
+
+    for (const [key, value] of Object.entries(inputs)) {
+        if (Object.prototype.hasOwnProperty.call(attributes, key)) {
+            obj._attributes[key] = value;
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        obj._persist = Object.assign({}, obj._persist, {dirty: true});
+    }
+
+    return obj;
 }
 
 

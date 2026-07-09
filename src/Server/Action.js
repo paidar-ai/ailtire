@@ -520,6 +520,17 @@ const mapToServices = () => {
     }
 };
 const upload = async (action, inputs, env) => {
+    if (env && env.hasOwnProperty('req') && env.req.hasOwnProperty('body')) {
+        if (env.req.body.data) {
+            for (let i in env.req.body.data) {
+                inputs[i] = env.req.body.data[i];
+            }
+        } else {
+            for (let i in env.req.body) {
+                inputs[i] = env.req.body[i];
+            }
+        }
+    }
     let finputs = {};
     for (let i in action.inputs) {
         let input = action.inputs[i];
@@ -550,7 +561,29 @@ const upload = async (action, inputs, env) => {
             console.warn("Parameter:", i, " is not defined!");
         }
     }
-    finputs.buffer = Buffer.from(env.req.body)
+    const requestBody = env?.req?.body;
+    const requestFile = env?.req?.file;
+    let bufferSource = null;
+    if (requestFile?.buffer) {
+        bufferSource = requestFile.buffer;
+    } else if (typeof finputs.content === 'string') {
+        const content = finputs.content.trim();
+        const commaIndex = content.indexOf(',');
+        if (content.startsWith('data:') && commaIndex >= 0) {
+            const meta = content.slice(5, commaIndex);
+            const payload = content.slice(commaIndex + 1);
+            bufferSource = /;base64/i.test(meta) ? Buffer.from(payload, 'base64') : Buffer.from(decodeURIComponent(payload), 'utf8');
+        } else {
+            bufferSource = Buffer.from(content, 'utf8');
+        }
+    } else if (typeof requestBody === 'string' || Buffer.isBuffer(requestBody)) {
+        bufferSource = requestBody;
+    } else if (requestBody && typeof requestBody === 'object') {
+        bufferSource = Buffer.from(JSON.stringify(requestBody), 'utf8');
+    } else {
+        bufferSource = Buffer.alloc(0);
+    }
+    finputs.buffer = Buffer.from(bufferSource)
     // run the function
     const retval = await _executeFunction(action, finputs, env);
     return retval;
