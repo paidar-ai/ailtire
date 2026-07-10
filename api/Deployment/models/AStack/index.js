@@ -1,54 +1,62 @@
-
 class AStack {
     static definition = {
         name: 'AStack',
-        description: 'Description ' +
-            'long description',
+        description: 'A deployable stack composed of services, networks, policies, and shared data.',
         attributes: {
-            attr1: {
+            name: {
                 type: 'string',
-                description: 'description' +
-                    ' long description'
+                required: true,
+                description: 'Stack name'
+            },
+            environment: {
+                type: 'string',
+                description: 'Owning environment name'
+            },
+            composeFile: {
+                type: 'string',
+                description: 'Resolved docker compose file used by this stack'
+            },
+            dockerFile: {
+                type: 'string',
+                description: 'Resolved dockerfile used to build this stack'
+            },
+            interface: {
+                type: 'json',
+                description: 'Interface mappings for the stack'
+            },
+            policies: {
+                type: 'json',
+                description: 'Policies applied to the stack'
+            },
+            data: {
+                type: 'json',
+                description: 'Shared data and volume definitions for the stack'
             }
         },
         associations: {
-            assoc1: {
-                type: 'ModelName',
-                cardinality: 1,
+            environmentRef: {
+                type: 'AEnvironment',
+                cardinality: '1',
                 composition: false,
                 owner: false,
+                description: 'Environment that contains this stack'
             },
-        },
-        /*
-        statenet: {
-            Init: {
-                description: "Initial State"
-                events: {
-                    create: {
-                        StateName: { }
-                    }
-                }
+            services: {
+                type: 'AService',
+                cardinality: 'n',
+                composition: false,
+                owner: false,
+                description: 'Services contained in this stack'
             },
-            StateName: {
-                description: "My Description of the state",
-                events: {
-                    eventName: {
-                        StateName: {
-                            condition: function(obj) { ... },
-                            action: function(obj) { ... },
-                        }
-                    },
-                    eventName2 ...
-                }
-                actions: {
-                    entry: { entry1: function(obj) { ... } },
-                    exit: { exit1: function(obj): { ... } }
-                }
+            networks: {
+                type: 'ANetwork',
+                cardinality: 'n',
+                composition: false,
+                owner: false,
+                description: 'Networks used by this stack'
             }
         }
-        */
     }
 }
 
 module.exports = AStack;
-

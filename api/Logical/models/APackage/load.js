@@ -3,11 +3,30 @@ const helper = require('../../../../src/utils/helper');
 const classProxy = require("../../../../src/Proxy/ClassProxy");
 const packageProxy = require("../../../../src/Proxy/PackageProxy");
 const fs = require("fs");
+const YAML = require('yamljs');
 
 const isDirectory = source => fs.existsSync(source) && fs.lstatSync(source).isDirectory();
 const isFile = source => fs.existsSync(source) && !fs.lstatSync(source).isDirectory();
 const getDirectories = source => fs.readdirSync(source).map(name => path.join(source, name)).filter(isDirectory);
 const getFiles = source => fs.readdirSync(source).map(name => path.join(source, name)).filter(isFile);
+
+const loadDeploy = (packageObj, prefix, dir) => {
+    if(fs.existsSync(path.resolve(dir, 'build.js'))) {
+        try {
+            packageObj.deploy = new ADeployment.load({
+                name: packageObj.shortname,
+                dir: dir,
+                prefix: prefix,
+                envs: {},
+                build: {}
+            });
+        }
+        catch (err) {
+            console.error(`ADeployment not defined Yet: ${prefix}`, err.message);
+        }
+    }
+
+};
 
 let dirOrder = [ 'models', 'interface', 'handlers', 'usecases', 'workflows', 'deploy' ];
 
@@ -23,10 +42,14 @@ let reservedDirs = {
         APackage.loadDocs(package, dir);
     },
     deploy: (package, prefix, dir) => {
-    //    package = ADeployment.load(package, prefix, dir);
+        if(global.ailtire.loaded) {
+            loadDeploy(package, prefix, dir);
+        }
     }, handlers: (package, prefix, dir) => {
         // The Interface directory can be multiple directories deep which map to routes A/B/C
-        // package.handlers = AHandler.loadAll(package, prefix, dir);
+        if(global.ailtire.loaded) {
+            // package.handlers = AHandler.loadAll(package, prefix, dir);
+        }
     },
     interface: (package, prefix, dir) => {
         //The Interface directory can be multiple directories deep which map to routes A/B/C
@@ -108,4 +131,3 @@ module.exports = {
         return global.packages[packageNameNoSpace];
     }
 };
-
