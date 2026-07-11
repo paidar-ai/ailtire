@@ -45,10 +45,11 @@ let reservedDirs = {
         if(global.ailtire.loaded) {
             loadDeploy(package, prefix, dir);
         }
-    }, handlers: (package, prefix, dir) => {
+    },
+    handlers: (package, prefix, dir) => {
         // The Interface directory can be multiple directories deep which map to routes A/B/C
         if(global.ailtire.loaded) {
-            // package.handlers = AHandler.loadAll(package, prefix, dir);
+            package.handlers = AHandler.loadAll(package, prefix, dir);
         }
     },
     interface: (package, prefix, dir) => {

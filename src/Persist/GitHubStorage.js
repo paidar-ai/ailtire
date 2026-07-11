@@ -123,6 +123,66 @@ class GitHubStorage {
         return null;
     }
 
+    getInheritanceChain(modelClass) {
+        let current = this.resolveModelClass(modelClass);
+        if (!current) {
+            return [];
+        }
+
+        const chain = [];
+        const seen = new Set();
+        while (current) {
+            const definition = current.definition || current;
+            const modelName = definition?.name || current?.name;
+            if (!modelName || seen.has(modelName)) {
+                break;
+            }
+            seen.add(modelName);
+            chain.unshift(current);
+
+            const parentName = definition?.extends;
+            if (!parentName || typeof parentName !== 'string') {
+                break;
+            }
+            current = this.getModelClass(parentName);
+        }
+        return chain;
+    }
+
+    getMergedDefinition(modelClass) {
+        const chain = this.getInheritanceChain(modelClass);
+        if (chain.length === 0) {
+            return modelClass?.definition || modelClass || {};
+        }
+
+        const merged = {};
+        for (const cls of chain) {
+            const definition = cls.definition || cls;
+            for (const [key, value] of Object.entries(definition)) {
+                if (key === 'attributes' || key === 'associations' || key === 'methods') {
+                    continue;
+                }
+                merged[key] = value;
+            }
+            merged.attributes = {
+                ...(merged.attributes || {}),
+                ...(definition.attributes || {})
+            };
+            merged.associations = {
+                ...(merged.associations || {}),
+                ...(definition.associations || {})
+            };
+            if (definition.methods) {
+                merged.methods = {
+                    ...(merged.methods || {}),
+                    ...definition.methods
+                };
+            }
+        }
+
+        return merged;
+    }
+
     getProviderByName(name) {
         if (!name) return null;
         return this.providerMap[String(name).toLowerCase()] || null;
@@ -399,7 +459,7 @@ class GitHubStorage {
     }
 
     async loadInstanceFromData(modelClass, data, itemDir) {
-        const definition = modelClass.definition;
+        const definition = this.getMergedDefinition(modelClass);
         const instanceData = {};
         const fileId = path.basename(itemDir || '').replace(/\s/g, '-');
 
@@ -586,7 +646,7 @@ class GitHubStorage {
     }
 
     setCompositionStorageDirs(instance, itemDir) {
-        const definition = instance.definition;
+        const definition = this.getMergedDefinition(instance.definition || instance);
         if (!definition?.associations) return;
 
         for (let assocName in definition.associations) {
@@ -659,7 +719,7 @@ class GitHubStorage {
     }
 
     async loadAttribute(instance, attrName) {
-        const definition = instance.definition;
+        const definition = this.getMergedDefinition(instance.definition || instance);
         const attr = definition.attributes[attrName];
         const fileName = this.getAttributeFile(instance, attrName) || attr.file;
         if (!fileName) return null;
@@ -678,7 +738,7 @@ class GitHubStorage {
     }
 
     async loadAttributeBuffer(instance, attrName) {
-        const definition = instance.definition;
+        const definition = this.getMergedDefinition(instance.definition || instance);
         const attr = definition.attributes[attrName];
         const fileName = this.getAttributeFile(instance, attrName) || attr.file;
         if (!fileName) return null;
@@ -697,7 +757,8 @@ class GitHubStorage {
     }
 
     getAttributeContentType(instance, attrName) {
-        const fileName = this.getAttributeFile(instance, attrName) || instance.definition.attributes[attrName]?.file || '';
+        const definition = this.getMergedDefinition(instance.definition || instance);
+        const fileName = this.getAttributeFile(instance, attrName) || definition.attributes[attrName]?.file || '';
         const ext = path.extname(fileName).toLowerCase();
         const contentTypes = {
             '.jpg': 'image/jpeg',
@@ -752,7 +813,7 @@ class GitHubStorage {
     }
 
     serialize(instance) {
-        const definition = instance.definition;
+        const definition = this.getMergedDefinition(instance.definition || instance);
         if (!definition) return instance; // Fallback for plain objects
 
         const data = {
@@ -843,7 +904,7 @@ class GitHubStorage {
     }
 
     async saveInstanceToDir(instance, itemDir) {
-        const definition = instance.definition;
+        const definition = this.getMergedDefinition(instance.definition || instance);
         if (!fs.existsSync(itemDir)) {
             fs.mkdirSync(itemDir, { recursive: true });
         }
@@ -858,7 +919,7 @@ class GitHubStorage {
     }
 
     async serializeForSave(instance, itemDir, options = {}) {
-        const definition = instance.definition;
+        const definition = this.getMergedDefinition(instance.definition || instance);
         if (!definition) return instance;
 
         const customStorage = options.skipStorageHook ? null : await this.callStorageHook(instance, itemDir);
