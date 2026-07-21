@@ -45,7 +45,7 @@ module.exports = {
             }
         }
 
-        const service = _findService(inputs.actionName);
+        const service = await _findService(inputs.actionName);
         if (!service) {
             throw new Error(`Could not find local Service: ${inputs.actionName}`);
         }
@@ -116,18 +116,21 @@ const _findAction = (name) => {
     }
 }
 
-const _findService = (actionName) => {
-    if (!global._servicePaths) {
-        return null;
-    }
+const _findService = async (actionName) => {
+    const services = await AService.instances();
     let paths = actionName.split('/');
     while (paths.length > 0) {
         let pathCheck = `${paths.join('/')}`;
-        if (global._servicePaths.hasOwnProperty(pathCheck)) {
-            return global._servicePaths[pathCheck];
-        } else {
-            paths.pop();
+        for(let i in services) {
+            let service = services[i];
+            let interfaceMap = Object.keys(service.interface);
+            for(let j in interfaceMap) {
+                if (pathCheck === interfaceMap[j]) {
+                    return service;
+                }
+            }
         }
+        paths.pop();
     }
     return null;
 }

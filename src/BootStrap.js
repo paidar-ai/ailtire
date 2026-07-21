@@ -34,6 +34,7 @@ module.exports = {
 
         APackage.load({dir:path.resolve(dir, 'api', 'Logical'), prefix: 'ailtire'});
         APackage.load({dir:path.resolve(dir, 'api')});
+        global.ailtire.loaded = true;
     }
 }
 

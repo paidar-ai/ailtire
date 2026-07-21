@@ -123,6 +123,39 @@ class GitHubStorage {
         return null;
     }
 
+    getSubclassNames(modelName, seen = new Set()) {
+        if (!modelName || seen.has(modelName)) {
+            return [];
+        }
+
+        seen.add(modelName);
+        const cls = this.getModelClass(modelName);
+        const declared = Array.isArray(cls?.definition?.subClasses) ? cls.definition.subClasses : [];
+        const inferred = [];
+
+        for (const candidateName of Object.keys(this.modelPaths || {})) {
+            if (candidateName === modelName) {
+                continue;
+            }
+            const candidate = this.getModelClass(candidateName);
+            if (candidate?.definition?.extends === modelName) {
+                inferred.push(candidateName);
+            }
+        }
+
+        const results = [];
+        for (const subclassName of [...declared, ...inferred]) {
+            if (!subclassName || seen.has(subclassName)) {
+                continue;
+            }
+            seen.add(subclassName);
+            results.push(subclassName);
+            results.push(...this.getSubclassNames(subclassName, seen));
+        }
+
+        return [...new Set(results)];
+    }
+
     getInheritanceChain(modelClass) {
         let current = this.resolveModelClass(modelClass);
         if (!current) {
@@ -250,25 +283,38 @@ class GitHubStorage {
         }
     }
 
-    async loadAll(modelClass, subDir) {
+    async loadAll(modelClass, subDir, options = {}) {
         if (!modelClass) {
             const results = {};
             const registered = Object.keys(this.modelPaths);
             if (registered.length > 0) {
-                for (const modelName of registered) {
+                const rootClasses = registered.filter((modelName) => {
                     const cls = this.getModelClass(modelName);
-                    if (cls) {
-                        results[modelName] = await this.loadAll(cls, this.modelPaths[modelName]);
+                    const parentName = cls?.definition?.extends;
+                    if (!parentName) {
+                        return true;
+                    }
+                    return !this.getModelClass(parentName);
+                });
+
+                const rootNames = rootClasses.length > 0 ? rootClasses : registered;
+                const visited = options.visited || new Set();
+                for (const modelName of rootNames) {
+                    const cls = this.getModelClass(modelName);
+                    if (cls && !visited.has(modelName)) {
+                        results[modelName] = await this.loadAll(cls, this.modelPaths[modelName], { visited });
                     }
                 }
                 return results;
             }
 
             if (global.classes) {
+                const visited = options.visited || new Set();
                 for (const modelName of Object.keys(global.classes)) {
                     const cls = this.getModelClass(modelName);
-                    if (cls) {
-                        results[modelName] = await this.loadAll(cls, this.getSubDir(modelName));
+                    const parentName = cls?.definition?.extends;
+                    if (cls && (!parentName || !this.getModelClass(parentName)) && !visited.has(modelName)) {
+                        results[modelName] = await this.loadAll(cls, this.getSubDir(modelName), { visited });
                     }
                 }
             }
@@ -280,12 +326,17 @@ class GitHubStorage {
         if (!modelName || !resolvedClass) {
             return [];
         }
+        const visited = options.visited || new Set();
+        if (visited.has(modelName)) {
+            return [];
+        }
+        visited.add(modelName);
         const dir = subDir || this.modelPaths[modelName] || this.getSubDir(modelName);
         const fullPath = path.resolve(this.clonePath, dir);
 
         if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isDirectory()) {
             console.error(`${modelName} directory does not exist:`, fullPath);
-            return [];
+            return await this.loadSubclassInstances(modelName, visited);
         }
 
         const entries = fs.readdirSync(fullPath, { withFileTypes: true });
@@ -295,6 +346,30 @@ class GitHubStorage {
                 const itemDir = path.join(fullPath, entry.name);
                 const item = await this.loadItem(modelClass, itemDir);
                 if (item) results.push(item);
+            }
+        }
+        const subclassItems = await this.loadSubclassInstances(modelName, visited);
+        if (subclassItems.length > 0) {
+            results.push(...subclassItems);
+        }
+        return results;
+    }
+
+    async loadSubclassInstances(modelName, visited = new Set()) {
+        const results = [];
+        const subclassNames = this.getModelClass(modelName).definition.subClasses || [];
+        for (const subclassName of subclassNames) {
+            if (visited.has(subclassName)) {
+                continue;
+            }
+            const cls = this.getModelClass(subclassName);
+            if (!cls) {
+                continue;
+            }
+            const subDir = this.modelPaths[subclassName] || this.getSubDir(subclassName);
+            const items = await this.loadAll(cls, subDir, { visited });
+            if (Array.isArray(items) && items.length > 0) {
+                results.push(...items);
             }
         }
         return results;
@@ -454,6 +529,7 @@ class GitHubStorage {
             return await this.loadInstanceFromData(modelClass, data, itemDir);
         } catch (e) {
             console.error(`Error loading item from ${itemDir}:`, e.message);
+            console.error(e);
             return null;
         }
     }
@@ -481,14 +557,6 @@ class GitHubStorage {
             } else {
                 if (data[attrName] !== undefined && data[attrName] !== null) {
                     instanceData[attrName] = data[attrName];
-                }
-                // Fallback for bio.md if type is string
-                if (attrName === 'bio' && typeof data[attrName] === 'string' && data[attrName].endsWith('.md')) {
-                    const bioPath = path.join(itemDir, data[attrName]);
-                    if (fs.existsSync(bioPath)) {
-                        instanceData[attrName] = fs.readFileSync(bioPath, 'utf-8');
-                        instanceData['_' + attrName + '_file'] = data[attrName];
-                    }
                 }
             }
         }
@@ -568,8 +636,13 @@ class GitHubStorage {
                     }
                 }
             } else if (!assoc.owner) {
-                // Non-owned relationships are references/queries. Do not hydrate them into
-                // _associations; ObjectProxy resolves service/via associations lazily.
+                // Non-owned relationships are stored as references. Keep the raw value so the
+                // proxy setter can populate _associations on the loaded instance.
+                if (data[assocName] !== undefined && data[assocName] !== null) {
+                    if (assoc.cardinality === 1 || assoc.cardinality === '1') {
+                        instanceData[assocName] = data[assocName];
+                    }
+                }
                 continue;
             }
         }
@@ -583,7 +656,7 @@ class GitHubStorage {
             }
         }
 
-        const modelCtor = modelClass?.prototype?.constructor || modelClass;
+        const modelCtor = modelClass;
         const instance = new modelCtor(instanceData);
         if (!instance.definition) {
             instance.definition = modelCtor.definition || modelClass.definition;
